@@ -697,7 +697,7 @@
                 <div class="id-card-top">
                     <div class="avatar-lg" id="card-avatar">?</div>
                     <div>
-                        <span class="badge-role" id="card-level">Dự trưởng</span>
+                        <span class="badge-role" id="card-level">DT</span>
                         <h2 id="card-fullname" style="font-size: 17px; font-weight: 700;">...</h2>
                         <p id="card-position" style="font-size: 12.5px; opacity: 0.9; margin-top: 2px;">...</p>
                     </div>
@@ -900,10 +900,10 @@
                 <div class="form-group">
                     <label>Hiện đang là</label>
                     <select id="adm-level" class="form-control">
-                        <option value="Dự trưởng">Dự trưởng</option>
-                        <option value="Huynh trưởng cấp 1">Huynh trưởng cấp 1</option>
-                        <option value="Huynh trưởng cấp 2">Huynh trưởng cấp 2</option>
-                        <option value="Cựu huynh trưởng">Cựu huynh trưởng</option>
+                        <option value="DT">DT</option>
+                        <option value="HT Cấp 1">HT Cấp 1</option>
+                        <option value="HT Cấp 2">HT Cấp 2</option>
+                        <option value="Cựu HT">Cựu HT</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -915,9 +915,9 @@
             <div class="form-group">
                 <label>Phân quyền hệ thống</label>
                 <select id="adm-role" class="form-control">
-                    <option value="user">user (Thành viên thường)</option>
-                    <option value="manager">manager (Quản lý điểm danh)</option>
-                    <option value="admin">admin (Quản trị viên)</option>
+                    <option value="user">User (Thành viên thường)</option>
+                    <option value="manager">Manager (Quản lý điểm danh)</option>
+                    <option value="admin">Admin (Quản trị viên)</option>
                 </select>
             </div>
 
@@ -1519,7 +1519,7 @@
             document.getElementById("adm-gender").value = user ? user.gender : "Nam";
             document.getElementById("adm-dob").value = user ? user.dob : "";
             document.getElementById("adm-phone").value = user ? user.phone : "";
-            document.getElementById("adm-level").value = user ? user.level : "Dự trưởng";
+            document.getElementById("adm-level").value = user ? user.level : "DT";
             document.getElementById("adm-position").value = user ? user.position : "";
             document.getElementById("adm-role").value = user ? user.role : "user";
             document.getElementById("adm-avatar-b64").value = "";

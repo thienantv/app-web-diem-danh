@@ -1,7 +1,7 @@
 {
   "name": "Hệ Thống Điểm Danh QR",
   "short_name": "Điểm Danh",
-  "description": "Ứng dụng điểm danh QR và quản lý Dự Trưởng - Huynh Trưởng",
+  "description": "Ứng dụng điểm danh QR và quản lý DT - Huynh Trưởng",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f4f5f7",
