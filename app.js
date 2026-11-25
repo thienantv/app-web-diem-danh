@@ -87,12 +87,6 @@ function setupNavigationByRole(openDefaultTab = false) {
     document.querySelectorAll(".role-non-admin").forEach(el => {
         el.style.display = (role !== "admin") ? "flex" : "none";
     });
-    document.querySelectorAll(".role-user-only").forEach(el => {
-        el.style.display = (role === "user") ? "flex" : "none";
-    });
-    document.querySelectorAll(".role-manager-only").forEach(el => {
-        el.style.display = (role === "manager") ? "inline-flex" : "none";
-    });
     document.querySelectorAll(".role-manager").forEach(el => {
         el.style.display = (role === "manager" || role === "admin") ? "flex" : "none";
     });
@@ -109,6 +103,11 @@ function setupNavigationByRole(openDefaultTab = false) {
             switchMainTab("view-qr", "Thẻ Điểm Danh", btn);
         }
     }
+}
+
+function backToProfileTab() {
+    const profileBtn = document.querySelector('.nav-item[data-tab="view-profile"]');
+    switchMainTab("view-profile", "Thông Tin Cá Nhân", profileBtn);
 }
 
 function switchMainTab(tabId, title, btn) {
@@ -689,10 +688,16 @@ function openUserModal(user) {
 
 function fillAdminEditForm(user) {
     const isNew = !user;
-    const userInput = document.getElementById("adm-username");
-    userInput.disabled = !isNew;
 
-    userInput.value = user ? user.username : "";
+    // Ẩn hoàn toàn trường Tên đăng nhập khi sửa; chỉ hiện khi tạo mới
+    document.getElementById("adm-username-group").style.display = isNew ? "block" : "none";
+    document.getElementById("adm-username").value = user ? user.username : "";
+
+    // Đổi nhãn mật khẩu phù hợp giữa Tạo mới và Chỉnh sửa
+    document.getElementById("adm-password-label").textContent = isNew
+        ? "Mật khẩu khởi tạo (Mặc định 123456 nếu để trống)"
+        : "Đổi mật khẩu mới (Để trống nếu giữ nguyên)";
+
     document.getElementById("adm-password").value = "";
     document.getElementById("adm-fullname").value = user ? user.fullName : "";
     document.getElementById("adm-gender").value = user ? user.gender : "Nam";
