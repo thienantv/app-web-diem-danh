@@ -658,3 +658,45 @@ body {
 }
 
 .nav-item.active { color: var(--primary); }
+
+/* ================= MODAL CẮT ẢNH ĐẠI DIỆN (CROPPER) ================= */
+.crop-card {
+    background: #fff;
+    width: 100%;
+    max-width: 360px;
+    border-radius: 22px;
+    padding: 18px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35);
+}
+
+.crop-stage {
+    position: relative;
+    width: 260px;
+    height: 260px;
+    margin: 0 auto;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #111827;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+}
+
+.crop-stage:active {
+    cursor: grabbing;
+}
+
+#crop-canvas {
+    display: block;
+    width: 260px;
+    height: 260px;
+}
+
+.crop-circle-guide {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: 50%;
+    box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55);
+    border: 2px dashed rgba(255, 255, 255, 0.9);
+}

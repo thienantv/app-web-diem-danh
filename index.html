@@ -416,6 +416,38 @@
         </div>
     </div>
 
+    <!-- MODAL CẮT ẢNH ĐẠI DIỆN THỦ CÔNG (CROP AVATAR) -->
+    <div class="modal-backdrop" id="crop-modal" style="z-index: 250; align-items: center; padding: 16px;">
+        <div class="crop-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 700;">Căn chỉnh ảnh đại diện</h3>
+                <button class="btn-icon" onclick="closeCropModal()">✕</button>
+            </div>
+
+            <p style="font-size: 12px; color: var(--muted); text-align: center; margin-bottom: 12px;">
+                Kéo ảnh để di chuyển vị trí • Dùng thanh trượt để phóng to
+            </p>
+
+            <!-- Khung cắt tròn 260x260 -->
+            <div class="crop-stage" id="crop-stage">
+                <canvas id="crop-canvas" width="260" height="260"></canvas>
+                <div class="crop-circle-guide"></div>
+            </div>
+
+            <!-- Thanh trượt Zoom -->
+            <div style="display: flex; align-items: center; gap: 10px; margin: 14px 0 16px;">
+                <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Thu</span>
+                <input type="range" id="crop-zoom" min="1" max="3" step="0.02" value="1" style="flex: 1; accent-color: var(--primary);" oninput="updateCropZoom(this.value)">
+                <span style="font-size: 12px; font-weight: 600; color: var(--muted);">Phóng</span>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-outline" onclick="closeCropModal()">Hủy bỏ</button>
+                <button class="btn btn-primary" onclick="confirmCropAvatar()">Áp dụng ảnh</button>
+            </div>
+        </div>
+    </div>
+
     <!-- THANH ĐIỀU HƯỚNG DƯỚI CÙNG -->
     <div class="bottom-nav" id="bottom-nav">
         <!-- Tab Mã QR: User & Manager (Admin ẩn) -->

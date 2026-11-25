@@ -291,27 +291,158 @@ async function saveMyProfile() {
     }
 }
 
+/* ================= BỘ CẮT ẢNH ĐẠI DIỆN THỦ CÔNG (CROPPER) ================= */
+let cropState = {
+    img: null,
+    targetHiddenId: "",
+    targetFileInput: null,
+    baseScale: 1,
+    zoom: 1,
+    offsetX: 0,
+    offsetY: 0,
+    isDragging: false,
+    startX: 0,
+    startY: 0
+};
+
 function previewAvatarFile(input, hiddenInputId) {
     const file = input.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
         img.onload = () => {
-            const canvas = document.createElement("canvas");
-            const maxSize = 240;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > maxSize) { h *= maxSize / w; w = maxSize; } }
-            else { if (h > maxSize) { w *= maxSize / h; h = maxSize; } }
-            canvas.width = w; canvas.height = h;
-            canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-            document.getElementById(hiddenInputId).value = canvas.toDataURL("image/jpeg", 0.75);
-            showToast("Đã chọn ảnh đại diện!", "success", 1500);
+            const stageSize = 260;
+            // Tỷ lệ tối thiểu để ảnh phủ kín khung vuông 260x260
+            const baseScale = Math.max(stageSize / img.width, stageSize / img.height);
+
+            cropState = {
+                img: img,
+                targetHiddenId: hiddenInputId,
+                targetFileInput: input,
+                baseScale: baseScale,
+                zoom: 1,
+                offsetX: 0,
+                offsetY: 0,
+                isDragging: false,
+                startX: 0,
+                startY: 0
+            };
+
+            document.getElementById("crop-zoom").value = "1";
+            document.getElementById("crop-modal").classList.add("open");
+            drawCropCanvas();
         };
         img.src = e.target.result;
     };
     reader.readAsDataURL(file);
 }
+
+function clampCropOffsets() {
+    const stageSize = 260;
+    const scale = cropState.baseScale * cropState.zoom;
+    const drawnW = cropState.img.width * scale;
+    const drawnH = cropState.img.height * scale;
+
+    const maxOffsetX = Math.max(0, (drawnW - stageSize) / 2);
+    const maxOffsetY = Math.max(0, (drawnH - stageSize) / 2);
+
+    cropState.offsetX = Math.min(maxOffsetX, Math.max(-maxOffsetX, cropState.offsetX));
+    cropState.offsetY = Math.min(maxOffsetY, Math.max(-maxOffsetY, cropState.offsetY));
+}
+
+function drawCropCanvas() {
+    if (!cropState.img) return;
+    clampCropOffsets();
+
+    const canvas = document.getElementById("crop-canvas");
+    const ctx = canvas.getContext("2d");
+    const stageSize = 260;
+    const scale = cropState.baseScale * cropState.zoom;
+    const drawnW = cropState.img.width * scale;
+    const drawnH = cropState.img.height * scale;
+
+    const x = (stageSize - drawnW) / 2 + cropState.offsetX;
+    const y = (stageSize - drawnH) / 2 + cropState.offsetY;
+
+    ctx.clearRect(0, 0, stageSize, stageSize);
+    ctx.drawImage(cropState.img, x, y, drawnW, drawnH);
+}
+
+function updateCropZoom(val) {
+    cropState.zoom = parseFloat(val) || 1;
+    drawCropCanvas();
+}
+
+function closeCropModal() {
+    document.getElementById("crop-modal").classList.remove("open");
+    if (cropState.targetFileInput && !document.getElementById(cropState.targetHiddenId).value) {
+        cropState.targetFileInput.value = "";
+    }
+}
+
+function confirmCropAvatar() {
+    if (!cropState.img) return;
+
+    // Xuất ảnh đã cắt ở độ phân giải 300x300 sắc nét (~25KB)
+    const outCanvas = document.createElement("canvas");
+    const outSize = 300;
+    outCanvas.width = outSize;
+    outCanvas.height = outSize;
+    const outCtx = outCanvas.getContext("2d");
+
+    const ratio = outSize / 260;
+    const scale = cropState.baseScale * cropState.zoom * ratio;
+    const drawnW = cropState.img.width * scale;
+    const drawnH = cropState.img.height * scale;
+    const x = (outSize - drawnW) / 2 + cropState.offsetX * ratio;
+    const y = (outSize - drawnH) / 2 + cropState.offsetY * ratio;
+
+    outCtx.fillStyle = "#ffffff";
+    outCtx.fillRect(0, 0, outSize, outSize);
+    outCtx.drawImage(cropState.img, x, y, drawnW, drawnH);
+
+    document.getElementById(cropState.targetHiddenId).value = outCanvas.toDataURL("image/jpeg", 0.82);
+    document.getElementById("crop-modal").classList.remove("open");
+    showToast("Đã cắt ảnh đại diện! Nhấn Lưu để cập nhật.", "success", 2200);
+}
+
+// Gắn sự kiện kéo chuột & vuốt cảm ứng cho khung cắt ảnh
+window.addEventListener("DOMContentLoaded", () => {
+    const stage = document.getElementById("crop-stage");
+    if (!stage) return;
+
+    const startDrag = (clientX, clientY) => {
+        cropState.isDragging = true;
+        cropState.startX = clientX - cropState.offsetX;
+        cropState.startY = clientY - cropState.offsetY;
+    };
+
+    const moveDrag = (clientX, clientY) => {
+        if (!cropState.isDragging) return;
+        cropState.offsetX = clientX - cropState.startX;
+        cropState.offsetY = clientY - cropState.startY;
+        drawCropCanvas();
+    };
+
+    const endDrag = () => { cropState.isDragging = false; };
+
+    stage.addEventListener("mousedown", e => startDrag(e.clientX, e.clientY));
+    window.addEventListener("mousemove", e => moveDrag(e.clientX, e.clientY));
+    window.addEventListener("mouseup", endDrag);
+
+    stage.addEventListener("touchstart", e => {
+        if (e.touches.length === 1) startDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+    stage.addEventListener("touchmove", e => {
+        if (e.touches.length === 1) {
+            e.preventDefault();
+            moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+        }
+    }, { passive: false });
+    stage.addEventListener("touchend", endDrag);
+});
 
 /* ================= TRANG 4: QUÉT QR & ĐIỂM DANH THỦ CÔNG ================= */
 function switchAttendSubMode(mode) {
