@@ -5,6 +5,7 @@ let dashboardData = null;
 let currentMyHistoryAct = "HỌP";
 let currentStatsAct = "HỌP";
 let attendSubMode = "qr";
+let selectedAdminUser = null;
 
 // Biến quét QR
 let videoStream = null;
@@ -19,12 +20,11 @@ if ('BarcodeDetector' in window) {
     try { nativeDetector = new BarcodeDetector({ formats: ['qr_code'] }); } catch (e) { }
 }
 
-// Đăng ký Service Worker cho PWA
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => { });
 }
 
-/* ================= GỌI API (TRÁNH CORS BẰNG TEXT/PLAIN) ================= */
+/* ================= GỌI API ================= */
 async function callApi(payload) {
     const res = await fetch(SCRIPT_URL, {
         method: "POST",
@@ -43,13 +43,13 @@ function showToast(msg, type = "", duration = 2500) {
     }
 }
 
-/* ================= ĐĂNG NHẬP & PHIÊN LÀM VIỆC ================= */
+/* ================= ĐĂNG NHẬP & ĐIỀU HƯỚNG THEO ROLE ================= */
 window.addEventListener("DOMContentLoaded", () => {
     const saved = localStorage.getItem("dd_user");
     if (saved) {
         currentUser = JSON.parse(saved);
         document.getElementById("login-screen").style.display = "none";
-        applyRoleUI();
+        setupNavigationByRole(true);
         refreshDashboard(false);
     }
 });
@@ -68,7 +68,7 @@ async function handleLogin() {
         localStorage.setItem("dd_user", JSON.stringify(currentUser));
         document.getElementById("login-screen").style.display = "none";
         showToast("Đăng nhập thành công!", "success");
-        applyRoleUI();
+        setupNavigationByRole(true);
         refreshDashboard(false);
     } catch (e) {
         showToast("Lỗi kết nối máy chủ!", "error");
@@ -81,14 +81,52 @@ function logout() {
     location.reload();
 }
 
-function applyRoleUI() {
+function setupNavigationByRole(openDefaultTab = false) {
     const role = currentUser.role;
+
+    document.querySelectorAll(".role-non-admin").forEach(el => {
+        el.style.display = (role !== "admin") ? "flex" : "none";
+    });
+    document.querySelectorAll(".role-user-only").forEach(el => {
+        el.style.display = (role === "user") ? "flex" : "none";
+    });
+    document.querySelectorAll(".role-manager-only").forEach(el => {
+        el.style.display = (role === "manager") ? "inline-flex" : "none";
+    });
     document.querySelectorAll(".role-manager").forEach(el => {
         el.style.display = (role === "manager" || role === "admin") ? "flex" : "none";
     });
     document.querySelectorAll(".role-admin").forEach(el => {
         el.style.display = (role === "admin") ? "flex" : "none";
     });
+
+    if (openDefaultTab) {
+        if (role === "admin") {
+            const btn = document.querySelector('.nav-item[data-tab="view-attendance"]');
+            switchMainTab("view-attendance", "Điểm Danh", btn);
+        } else {
+            const btn = document.querySelector('.nav-item[data-tab="view-qr"]');
+            switchMainTab("view-qr", "Thẻ Điểm Danh", btn);
+        }
+    }
+}
+
+function switchMainTab(tabId, title, btn) {
+    document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
+    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
+    document.getElementById(tabId).classList.add("active");
+    if (btn) btn.classList.add("active");
+    document.getElementById("header-title").textContent = title;
+
+    if (tabId === "view-profile") {
+        toggleProfileEdit(false);
+    }
+
+    if (tabId === "view-attendance" && attendSubMode === "qr") {
+        startCamera();
+    } else {
+        stopCamera();
+    }
 }
 
 async function refreshDashboard(manual = false) {
@@ -102,11 +140,15 @@ async function refreshDashboard(manual = false) {
         dashboardData = res;
         currentUser = res.currentUser;
         localStorage.setItem("dd_user", JSON.stringify(currentUser));
-        applyRoleUI();
+        setupNavigationByRole(false);
 
         document.getElementById("header-date").textContent = "Hôm nay: " + res.today;
-        renderProfileAndQR();
-        renderMyHistory();
+
+        if (currentUser.role !== "admin") {
+            renderQRPage();
+            renderMyHistory();
+        }
+        renderProfilePage();
 
         if (currentUser.role === "manager" || currentUser.role === "admin") {
             renderAttendanceList();
@@ -121,22 +163,7 @@ async function refreshDashboard(manual = false) {
     }
 }
 
-/* ================= CHUYỂN TAB CHÍNH ================= */
-function switchMainTab(tabId, title, btn) {
-    document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
-    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-    document.getElementById(tabId).classList.add("active");
-    btn.classList.add("active");
-    document.getElementById("header-title").textContent = title;
-
-    if (tabId === "view-attendance" && attendSubMode === "qr") {
-        startCamera();
-    } else {
-        stopCamera();
-    }
-}
-
-/* ================= TAB 1: THẺ QR & HỒ SƠ CÁ NHÂN ================= */
+/* ================= TRANG 1: MÃ QR ĐIỂM DANH (USER & MANAGER) ================= */
 function renderAvatarHTML(url, name) {
     if (url && url.trim() !== "") {
         return `<img src="${url}" alt="avatar" onerror="this.style.display='none'; this.parentNode.textContent='${getInitials(name)}'">`;
@@ -148,44 +175,26 @@ function getInitials(name) {
     return name ? name.trim().split(" ").pop().charAt(0).toUpperCase() : "?";
 }
 
-// 1. Trong hàm renderProfileAndQR(): ẩn thẻ lịch sử cá nhân nếu là admin
-function renderProfileAndQR() {
+function renderQRPage() {
     const u = currentUser;
-    document.getElementById("card-avatar").innerHTML = renderAvatarHTML(u.avatar, u.fullName);
-    document.getElementById("card-level").textContent = u.level || (u.role === "admin" ? "Quản trị viên" : "Thành viên");
-    document.getElementById("card-fullname").textContent = u.fullName;
-    document.getElementById("card-position").textContent = u.position || (u.role === "admin" ? "Quản trị hệ thống" : "Chưa cập nhật chức vụ");
-    document.getElementById("card-id").textContent = "MÃ ĐỊNH DANH: " + u.id;
+    document.getElementById("qr-card-avatar").innerHTML = renderAvatarHTML(u.avatar, u.fullName);
+    document.getElementById("qr-card-level").textContent = u.level || "Thành viên";
+    document.getElementById("qr-card-fullname").textContent = u.fullName;
+    document.getElementById("qr-card-position").textContent = u.position || "Chưa cập nhật chức vụ";
 
-    // Ẩn lịch sử điểm danh cá nhân nếu tài khoản là Admin
-    const historyCard = document.getElementById("my-history-card");
-    if (historyCard) {
-        historyCard.style.display = (u.role === "admin") ? "none" : "block";
-    }
-
-    // Vẽ mã QR từ ID
     const qrBox = document.getElementById("my-qrcode");
     qrBox.innerHTML = "";
     new QRCode(qrBox, {
         text: u.id,
-        width: 165,
-        height: 165,
+        width: 195,
+        height: 195,
         colorDark: "#002060",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
     });
-
-    // Đổ dữ liệu vào form cá nhân
-    document.getElementById("prof-fullname").value = u.fullName || "";
-    document.getElementById("prof-gender").value = u.gender || "Nam";
-    document.getElementById("prof-dob").value = u.dob || "";
-    document.getElementById("prof-phone").value = u.phone || "";
-    document.getElementById("prof-level").value = u.level || "";
-    document.getElementById("prof-position").value = u.position || "";
-    document.getElementById("prof-password").value = "";
-    document.getElementById("prof-avatar-b64").value = "";
 }
 
+/* ================= TRANG 2: LỊCH SỬ ĐIỂM DANH CÁ NHÂN ================= */
 function switchMyHistoryTab(actName, btn) {
     currentMyHistoryAct = actName;
     btn.parentNode.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
@@ -195,11 +204,22 @@ function switchMyHistoryTab(actName, btn) {
 
 function renderMyHistory() {
     const listEl = document.getElementById("my-history-list");
+    const summaryEl = document.getElementById("my-history-summary");
     const records = (dashboardData && dashboardData.myHistory[currentMyHistoryAct]) || [];
+
     if (records.length === 0) {
-        listEl.innerHTML = `<div style="text-align:center; padding: 18px; color: var(--muted); font-size: 13px;">Chưa có dữ liệu điểm danh mục này</div>`;
+        summaryEl.style.display = "none";
+        listEl.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--muted); font-size: 13px;">Chưa có dữ liệu điểm danh mục này</div>`;
         return;
     }
+
+    const presentCount = records.filter(r => r.present).length;
+    summaryEl.style.display = "flex";
+    summaryEl.innerHTML = `
+        <span>Tổng buổi tham dự (${currentMyHistoryAct})</span>
+        <span>${presentCount}/${records.length} buổi</span>
+    `;
+
     listEl.innerHTML = records.map(r => `
         <div class="history-row">
             <div>
@@ -210,6 +230,42 @@ function renderMyHistory() {
             </span>
         </div>
     `).join("");
+}
+
+/* ================= TRANG 3: THÔNG TIN CÁ NHÂN (XEM & SỬA) ================= */
+function renderProfilePage() {
+    const u = currentUser;
+    const defaultLevel = u.level || (u.role === "admin" ? "Quản trị viên" : "Thành viên");
+    const defaultPos = u.position || (u.role === "admin" ? "Quản trị hệ thống" : "Chưa cập nhật");
+
+    // Hero & Chế độ Xem
+    document.getElementById("prof-hero-avatar").innerHTML = renderAvatarHTML(u.avatar, u.fullName);
+    document.getElementById("prof-hero-level").textContent = defaultLevel;
+    document.getElementById("prof-hero-fullname").textContent = u.fullName;
+    document.getElementById("prof-hero-position").textContent = defaultPos;
+
+    document.getElementById("v-prof-username").textContent = "@" + u.username;
+    document.getElementById("v-prof-fullname").textContent = u.fullName || "—";
+    document.getElementById("v-prof-gender").textContent = u.gender || "—";
+    document.getElementById("v-prof-dob").textContent = u.dob || "Chưa cập nhật";
+    document.getElementById("v-prof-phone").textContent = u.phone || "Chưa cập nhật";
+    document.getElementById("v-prof-level").textContent = defaultLevel;
+    document.getElementById("v-prof-position").textContent = defaultPos;
+
+    // Form Chế độ Sửa
+    document.getElementById("prof-fullname").value = u.fullName || "";
+    document.getElementById("prof-gender").value = u.gender || "Nam";
+    document.getElementById("prof-dob").value = u.dob || "";
+    document.getElementById("prof-phone").value = u.phone || "";
+    document.getElementById("prof-password").value = "";
+    document.getElementById("prof-avatar-b64").value = "";
+    document.getElementById("prof-avatar-file").value = "";
+}
+
+function toggleProfileEdit(isEditing) {
+    document.getElementById("profile-view-box").style.display = isEditing ? "none" : "block";
+    document.getElementById("profile-edit-box").style.display = isEditing ? "block" : "none";
+    if (!isEditing) renderProfilePage();
 }
 
 async function saveMyProfile() {
@@ -229,13 +285,13 @@ async function saveMyProfile() {
     const res = await callApi(payload);
     if (res.success) {
         showToast(res.message, "success");
+        toggleProfileEdit(false);
         refreshDashboard(false);
     } else {
         showToast(res.message, "error");
     }
 }
 
-// Nén ảnh trước khi gửi lên Drive để tốc độ tải lên cực nhanh (~20KB)
 function previewAvatarFile(input, hiddenInputId) {
     const file = input.files[0];
     if (!file) return;
@@ -258,7 +314,7 @@ function previewAvatarFile(input, hiddenInputId) {
     reader.readAsDataURL(file);
 }
 
-/* ================= TAB 2: QUÉT QR & ĐIỂM DANH THỦ CÔNG ================= */
+/* ================= TRANG 4: QUÉT QR & ĐIỂM DANH THỦ CÔNG ================= */
 function switchAttendSubMode(mode) {
     attendSubMode = mode;
     document.getElementById("subtab-qr-btn").classList.toggle("active", mode === "qr");
@@ -277,12 +333,10 @@ function onActivityChange() {
     renderAttendanceList();
 }
 
-// 2. Trong hàm renderAttendanceList(): loại admin khỏi danh sách & bộ đếm sĩ số
 function renderAttendanceList() {
     if (!dashboardData) return;
     const act = document.getElementById("activity-select").value;
     const todayMap = dashboardData.todayAttendance[act] || {};
-    // Chỉ lấy những thành viên không phải admin
     const attendableMembers = (dashboardData.members || []).filter(m => m.role !== "admin");
     const kw = document.getElementById("attend-search").value.toLowerCase().trim();
 
@@ -291,7 +345,7 @@ function renderAttendanceList() {
     document.getElementById("attend-counter").textContent = `${checkedCount}/${attendableMembers.length}`;
 
     const filtered = attendableMembers.filter(m =>
-        m.fullName.toLowerCase().includes(kw) || m.id.toLowerCase().includes(kw)
+        m.fullName.toLowerCase().includes(kw)
     );
 
     document.getElementById("attendance-user-list").innerHTML = filtered.map(m => {
@@ -302,7 +356,7 @@ function renderAttendanceList() {
                     <div class="avatar-sm">${renderAvatarHTML(m.avatar, m.fullName)}</div>
                     <div>
                         <div style="font-size: 14px; font-weight: 600;">${m.fullName}</div>
-                        <div style="font-size: 11.5px; color: var(--muted);">${m.id} • ${m.level || 'Thành viên'}</div>
+                        <div style="font-size: 11.5px; color: var(--muted);">${m.level || 'Thành viên'} • ${m.position || 'Chưa có chức vụ'}</div>
                     </div>
                 </div>
                 <input type="checkbox" class="custom-check" ${isChecked ? 'checked' : ''} onchange="submitCheckIn('${m.id}', this.checked)">
@@ -334,7 +388,7 @@ async function submitCheckIn(targetId, isChecked) {
     }
 }
 
-/* ================= LÕI CAMERA QUÉT QR TỐC ĐỘ CAO ================= */
+/* ================= LÕI CAMERA QUÉT QR ================= */
 function playBeep() {
     try {
         const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -467,7 +521,7 @@ function renderScanResultCard(member, statusType, statusLabel) {
                     ${member.fullName}
                 </div>
                 <div style="font-size: 12.5px; opacity: 0.92; margin-top: 2px;">
-                    ${member.position || "Chưa cập nhật chức vụ"} • <strong style="letter-spacing:0.5px;">${member.id}</strong>
+                    ${member.position || "Chưa cập nhật chức vụ"}
                 </div>
             </div>
         </div>
@@ -487,7 +541,7 @@ function handleScannedQR(scannedId) {
 
     if (!member) {
         playBeep();
-        renderScanResultCard(null, "invalid", `Mã [${scannedId}] không tồn tại`);
+        renderScanResultCard(null, "invalid", "Mã QR không hợp lệ");
         setTimeout(() => { isProcessingScan = false; }, 1300);
         return;
     }
@@ -512,7 +566,7 @@ function handleScannedQR(scannedId) {
     setTimeout(() => { isProcessingScan = false; }, 1300);
 }
 
-/* ================= TAB 3: THỐNG KÊ TOÀN ĐOÀN ================= */
+/* ================= TRANG 5: THỐNG KÊ TOÀN ĐOÀN ================= */
 function switchStatsActivity(act, btn) {
     currentStatsAct = act;
     btn.parentNode.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
@@ -525,7 +579,7 @@ function renderAllStats() {
     const list = dashboardData.allHistorySummary[currentStatsAct] || [];
     const kw = document.getElementById("stats-search").value.toLowerCase().trim();
     const filtered = list.filter(item =>
-        item.fullName.toLowerCase().includes(kw) || item.id.toLowerCase().includes(kw)
+        item.fullName.toLowerCase().includes(kw)
     );
 
     document.getElementById("all-stats-list").innerHTML = filtered.map(item => `
@@ -553,12 +607,31 @@ function renderAllStats() {
     `).join("");
 }
 
-/* ================= TAB 4: QUẢN TRỊ TÀI KHOẢN (CHỈ ADMIN) ================= */
+/* ================= TRANG 6: QUẢN TRỊ TÀI KHOẢN (XEM TRƯỚC -> SỬA SAU) ================= */
+function getNextSequentialHtId() {
+    const members = (dashboardData && dashboardData.members) || [];
+    const usedNumbers = new Set();
+
+    members.forEach(m => {
+        const match = String(m.id || "").trim().toUpperCase().match(/^HT(\d+)$/);
+        if (match) {
+            usedNumbers.add(parseInt(match[1], 10));
+        }
+    });
+
+    let nextNum = 1;
+    while (usedNumbers.has(nextNum)) {
+        nextNum++;
+    }
+
+    return "HT" + String(nextNum).padStart(2, "0");
+}
+
 function renderAdminUsers() {
     if (!dashboardData) return;
     const kw = document.getElementById("admin-search").value.toLowerCase().trim();
     const members = (dashboardData.members || []).filter(m =>
-        m.fullName.toLowerCase().includes(kw) || m.id.toLowerCase().includes(kw) || m.username.toLowerCase().includes(kw)
+        m.fullName.toLowerCase().includes(kw) || m.username.toLowerCase().includes(kw)
     );
 
     document.getElementById("admin-user-list").innerHTML = members.map(m => `
@@ -567,7 +640,7 @@ function renderAdminUsers() {
                 <div class="avatar-sm">${renderAvatarHTML(m.avatar, m.fullName)}</div>
                 <div>
                     <div style="font-size: 14px; font-weight: 600;">${m.fullName}</div>
-                    <div style="font-size: 11.5px; color: var(--muted);">${m.id} • ${m.level} • ${m.position || 'Chưa có CV'}</div>
+                    <div style="font-size: 11.5px; color: var(--muted);">@${m.username} • ${m.level || 'Thành viên'} • ${m.position || 'Chưa có CV'}</div>
                 </div>
             </div>
             <span class="status-tag" style="background: var(--primary-light); color: var(--primary); text-transform: uppercase;">${m.role}</span>
@@ -576,17 +649,49 @@ function renderAdminUsers() {
 }
 
 function openUserModal(user) {
+    selectedAdminUser = user;
     const isNew = !user;
-    document.getElementById("adm-is-new").value = isNew ? "1" : "0";
-    document.getElementById("modal-title").textContent = isNew ? "Thêm thành viên mới" : "Sửa thông tin thành viên";
-    document.getElementById("btn-delete-user").style.display = isNew ? "none" : "inline-flex";
 
-    const idInput = document.getElementById("adm-id");
+    document.getElementById("adm-is-new").value = isNew ? "1" : "0";
+    document.getElementById("adm-id").value = isNew ? getNextSequentialHtId() : user.id;
+
+    if (isNew) {
+        // Nếu bấm "+ Thêm", mở thẳng Form tạo mới
+        document.getElementById("modal-title").textContent = "Thêm thành viên mới";
+        document.getElementById("adm-view-mode").style.display = "none";
+        document.getElementById("adm-edit-mode").style.display = "block";
+        fillAdminEditForm(null);
+    } else {
+        // Nếu bấm vào 1 thành viên có sẵn, mở Chế độ Xem chi tiết trước
+        document.getElementById("modal-title").textContent = "Chi tiết thành viên";
+        document.getElementById("adm-view-mode").style.display = "block";
+        document.getElementById("adm-edit-mode").style.display = "none";
+
+        document.getElementById("adm-v-avatar").innerHTML = renderAvatarHTML(user.avatar, user.fullName);
+        document.getElementById("adm-v-role").textContent = (user.role || "user").toUpperCase();
+        document.getElementById("adm-v-fullname").textContent = user.fullName;
+        document.getElementById("adm-v-sub").textContent = `${user.level || "Thành viên"} • ${user.position || "Chưa cập nhật chức vụ"}`;
+
+        document.getElementById("adm-v-username").textContent = "@" + user.username;
+        document.getElementById("adm-v-gender").textContent = user.gender || "—";
+        document.getElementById("adm-v-dob").textContent = user.dob || "Chưa cập nhật";
+        document.getElementById("adm-v-phone").textContent = user.phone || "Chưa cập nhật";
+        document.getElementById("adm-v-level").textContent = user.level || "—";
+        document.getElementById("adm-v-position").textContent = user.position || "Chưa cập nhật";
+
+        // Ẩn nút Xóa nếu đang xem chính tài khoản Admin đang đăng nhập
+        document.getElementById("btn-delete-user").style.display =
+            (user.id.toLowerCase() === currentUser.id.toLowerCase()) ? "none" : "inline-flex";
+    }
+
+    document.getElementById("user-modal").classList.add("open");
+}
+
+function fillAdminEditForm(user) {
+    const isNew = !user;
     const userInput = document.getElementById("adm-username");
-    idInput.disabled = !isNew;
     userInput.disabled = !isNew;
 
-    idInput.value = user ? user.id : "";
     userInput.value = user ? user.username : "";
     document.getElementById("adm-password").value = "";
     document.getElementById("adm-fullname").value = user ? user.fullName : "";
@@ -598,18 +703,32 @@ function openUserModal(user) {
     document.getElementById("adm-role").value = user ? user.role : "user";
     document.getElementById("adm-avatar-b64").value = "";
     document.getElementById("adm-avatar-file").value = "";
+}
 
-    document.getElementById("user-modal").classList.add("open");
+function switchAdminModalToEdit() {
+    document.getElementById("modal-title").textContent = "Chỉnh sửa thành viên";
+    document.getElementById("adm-view-mode").style.display = "none";
+    document.getElementById("adm-edit-mode").style.display = "block";
+    fillAdminEditForm(selectedAdminUser);
+}
+
+function cancelAdminEdit() {
+    if (!selectedAdminUser) {
+        closeUserModal();
+    } else {
+        openUserModal(selectedAdminUser);
+    }
 }
 
 function closeUserModal() {
     document.getElementById("user-modal").classList.remove("open");
+    selectedAdminUser = null;
 }
 
 async function saveUserByAdmin() {
     const isNew = document.getElementById("adm-is-new").value === "1";
     const userData = {
-        id: document.getElementById("adm-id").value.trim(),
+        id: isNew ? getNextSequentialHtId() : document.getElementById("adm-id").value.trim(),
         username: document.getElementById("adm-username").value.trim(),
         password: document.getElementById("adm-password").value.trim(),
         fullName: document.getElementById("adm-fullname").value.trim(),
@@ -641,7 +760,8 @@ async function saveUserByAdmin() {
 
 async function deleteUserByAdmin() {
     const targetId = document.getElementById("adm-id").value.trim();
-    if (!confirm(`Bạn có chắc chắn muốn xóa thành viên [${targetId}] khỏi toàn bộ hệ thống không?`)) return;
+    const targetName = selectedAdminUser ? selectedAdminUser.fullName : "";
+    if (!confirm(`Bạn có chắc chắn muốn xóa thành viên [${targetName}] khỏi toàn bộ hệ thống không?`)) return;
 
     showToast("Đang xóa thành viên...", "loading", 0);
     const res = await callApi({

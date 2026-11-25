@@ -51,10 +51,17 @@
     <!-- HEADER CHÍNH -->
     <div class="app-header">
         <div>
-            <div class="header-title" id="header-title">Thẻ Cá Nhân</div>
+            <div class="header-title" id="header-title">Thẻ Điểm Danh</div>
             <div class="header-sub" id="header-date">Hôm nay: ...</div>
         </div>
         <div style="display: flex; gap: 8px;">
+            <!-- Nút vào nhanh Hồ sơ dành riêng cho Admin -->
+            <button class="btn-icon role-admin" style="display: none;" onclick="switchMainTab('view-profile', 'Hồ Sơ Quản Trị', null)" title="Hồ sơ cá nhân">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                </svg>
+            </button>
             <button class="btn-icon" onclick="refreshDashboard(true)" title="Đồng bộ dữ liệu">
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                     <polyline points="23 4 23 10 17 10" />
@@ -71,48 +78,105 @@
         </div>
     </div>
 
-    <!-- NỘI DUNG CÁC TAB -->
+    <!-- NỘI DUNG CÁC TRANG -->
     <div class="main-container">
 
-        <!-- TAB 1: THẺ QR & HỒ SƠ CÁ NHÂN (MỌI ROLE) -->
-        <div id="view-profile" class="tab-view active">
-            <div class="id-card">
+        <!-- TRANG 1: MÃ QR ĐIỂM DANH (USER & MANAGER) -->
+        <div id="view-qr" class="tab-view">
+            <div class="id-card qr-only-card">
                 <div class="id-card-top">
-                    <div class="avatar-lg" id="card-avatar">?</div>
+                    <div class="avatar-lg" id="qr-card-avatar">?</div>
                     <div>
-                        <span class="badge-role" id="card-level">...</span>
-                        <h2 id="card-fullname" style="font-size: 17px; font-weight: 700;">...</h2>
-                        <p id="card-position" style="font-size: 12.5px; opacity: 0.9; margin-top: 2px;">...</p>
+                        <span class="badge-role" id="qr-card-level">...</span>
+                        <h2 id="qr-card-fullname" style="font-size: 18px; font-weight: 700;">...</h2>
+                        <p id="qr-card-position" style="font-size: 13px; opacity: 0.9; margin-top: 2px;">...</p>
                     </div>
                 </div>
                 <div class="qr-box-wrapper">
                     <div id="my-qrcode"></div>
-                    <div class="qr-code-label" id="card-id">MÃ ĐỊNH DANH: ...</div>
+                    <p style="font-size: 12px; color: var(--muted); margin-top: 12px; text-align: center;">
+                        Đưa mã QR này cho Ban điều hành để điểm danh
+                    </p>
                 </div>
             </div>
+        </div>
 
-            <!-- LỊCH SỬ ĐIỂM DANH CỦA TÔI -->
-            <div class="card" id="my-history-card">
-                <div class="card-title">Lịch sử điểm danh của tôi</div>
+        <!-- TRANG 2: LỊCH SỬ ĐIỂM DANH CÁ NHÂN (USER & MANAGER) -->
+        <div id="view-history" class="tab-view">
+            <div class="card">
+                <div class="card-title">Lịch sử tham dự của tôi</div>
                 <div class="pill-tabs">
                     <button class="pill-btn active" onclick="switchMyHistoryTab('HỌP', this)">HỌP</button>
                     <button class="pill-btn" onclick="switchMyHistoryTab('SINH HOẠT', this)">SINH HOẠT</button>
                     <button class="pill-btn" onclick="switchMyHistoryTab('VIỆC CHUNG', this)">VIỆC CHUNG</button>
                 </div>
+                <div id="my-history-summary" class="history-summary-banner"></div>
                 <div id="my-history-list"></div>
             </div>
+        </div>
 
-            <!-- CẬP NHẬT HỒ SƠ CÁ NHÂN -->
-            <div class="card">
+        <!-- TRANG 3: THÔNG TIN CÁ NHÂN (CHẾ ĐỘ XEM & CHỈNH SỬA) -->
+        <div id="view-profile" class="tab-view">
+            <!-- Header thẻ hồ sơ -->
+            <div class="profile-hero">
+                <div class="avatar-xl" id="prof-hero-avatar">?</div>
+                <span class="badge-role-dark" id="prof-hero-level">...</span>
+                <h2 id="prof-hero-fullname" style="font-size: 18px; font-weight: 700; margin-top: 6px;">...</h2>
+                <p id="prof-hero-position" style="font-size: 13px; color: var(--muted); margin-top: 2px;">...</p>
+            </div>
+
+            <!-- Nút xem lịch sử cá nhân dành cho Manager -->
+            <button class="btn btn-outline role-manager-only" style="display: none; margin-bottom: 12px;" onclick="switchMainTab('view-history', 'Lịch Sử Cá Nhân', null)">
+                Xem lịch sử điểm danh của tôi →
+            </button>
+
+            <!-- CHẾ ĐỘ 1: HIỂN THỊ THÔNG TIN CHI TIẾT (READ-ONLY) -->
+            <div class="card" id="profile-view-box">
                 <div class="card-title">
-                    <span>Thông tin cá nhân</span>
-                    <span style="font-size: 11px; color: var(--muted); font-weight: 500;">Cấp bậc & Chức vụ do Admin
-                        quản lý</span>
+                    <span>Chi tiết hồ sơ</span>
+                    <button class="btn-sm-primary" onclick="toggleProfileEdit(true)">Chỉnh sửa</button>
+                </div>
+                <div class="info-list">
+                    <div class="info-row">
+                        <span class="info-label">Tên đăng nhập</span>
+                        <span class="info-val" id="v-prof-username">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Thánh, Họ và tên</span>
+                        <span class="info-val" id="v-prof-fullname">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Giới tính</span>
+                        <span class="info-val" id="v-prof-gender">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày sinh</span>
+                        <span class="info-val" id="v-prof-dob">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại</span>
+                        <span class="info-val" id="v-prof-phone">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Hiện đang là</span>
+                        <span class="info-val" id="v-prof-level">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Chức vụ hiện tại</span>
+                        <span class="info-val" id="v-prof-position">...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CHẾ ĐỘ 2: FORM CHỈNH SỬA HỒ SƠ (ẨN MẶC ĐỊNH) -->
+            <div class="card" id="profile-edit-box" style="display: none;">
+                <div class="card-title">
+                    <span>Chỉnh sửa thông tin</span>
+                    <button class="btn-sm-outline" onclick="toggleProfileEdit(false)">Hủy</button>
                 </div>
                 <div class="form-group">
-                    <label>Ảnh đại diện (Chọn ảnh mới từ máy)</label>
-                    <input type="file" id="prof-avatar-file" accept="image/*" class="form-control"
-                        onchange="previewAvatarFile(this, 'prof-avatar-b64')">
+                    <label>Ảnh đại diện mới</label>
+                    <input type="file" id="prof-avatar-file" accept="image/*" class="form-control" onchange="previewAvatarFile(this, 'prof-avatar-b64')">
                     <input type="hidden" id="prof-avatar-b64">
                 </div>
                 <div class="form-group">
@@ -136,31 +200,23 @@
                     <label>Số điện thoại</label>
                     <input type="tel" id="prof-phone" class="form-control">
                 </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                    <div class="form-group">
-                        <label>Hiện đang là (Khóa)</label>
-                        <input type="text" id="prof-level" class="form-control" disabled>
-                    </div>
-                    <div class="form-group">
-                        <label>Chức vụ hiện tại (Khóa)</label>
-                        <input type="text" id="prof-position" class="form-control" disabled>
-                    </div>
-                </div>
                 <div class="form-group">
                     <label>Đổi mật khẩu mới (Để trống nếu giữ nguyên)</label>
                     <input type="password" id="prof-password" class="form-control" placeholder="Nhập mật khẩu mới...">
                 </div>
-                <button class="btn btn-primary" onclick="saveMyProfile()">Lưu thông tin cá nhân</button>
+                <div style="display: flex; gap: 10px; margin-top: 8px;">
+                    <button class="btn btn-outline" onclick="toggleProfileEdit(false)">Hủy bỏ</button>
+                    <button class="btn btn-primary" onclick="saveMyProfile()">Lưu thay đổi</button>
+                </div>
             </div>
         </div>
 
-        <!-- TAB 2: QUÉT QR & ĐIỂM DANH THỦ CÔNG (MANAGER & ADMIN) -->
+        <!-- TRANG 4: QUÉT QR & ĐIỂM DANH THỦ CÔNG (MANAGER & ADMIN) -->
         <div id="view-attendance" class="tab-view">
             <div class="card" style="padding: 12px;">
                 <div class="form-group" style="margin-bottom: 10px;">
                     <label>Chọn loại hoạt động điểm danh hôm nay</label>
-                    <select id="activity-select" class="form-control" style="font-weight: 700; color: var(--primary);"
-                        onchange="onActivityChange()">
+                    <select id="activity-select" class="form-control" style="font-weight: 700; color: var(--primary);" onchange="onActivityChange()">
                         <option value="HỌP">HỌP</option>
                         <option value="SINH HOẠT">SINH HOẠT</option>
                         <option value="VIỆC CHUNG">VIỆC CHUNG</option>
@@ -168,10 +224,8 @@
                 </div>
 
                 <div class="pill-tabs" style="grid-template-columns: 1fr 1fr; margin-bottom: 0;">
-                    <button class="pill-btn active" id="subtab-qr-btn" onclick="switchAttendSubMode('qr')">Quét mã
-                        QR</button>
-                    <button class="pill-btn" id="subtab-manual-btn" onclick="switchAttendSubMode('manual')">Điểm danh
-                        tay (<span id="attend-counter">0/0</span>)</button>
+                    <button class="pill-btn active" id="subtab-qr-btn" onclick="switchAttendSubMode('qr')">Quét mã QR</button>
+                    <button class="pill-btn" id="subtab-manual-btn" onclick="switchAttendSubMode('manual')">Điểm danh tay (<span id="attend-counter">0/0</span>)</button>
                 </div>
             </div>
 
@@ -189,36 +243,30 @@
                     </div>
                 </div>
 
-                <!-- THẺ HIỂN THỊ THÔNG TIN NGƯỜI VỪA QUÉT MÃ QR -->
                 <div id="scan-result-card" class="scan-result-card empty">
                     <div class="scan-placeholder">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                            <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                            <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                            <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                            <path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
                             <rect x="7" y="7" width="10" height="10" rx="1" />
                         </svg>
                         <span>Sẵn sàng quét — Đưa mã QR vào khung hình</span>
                     </div>
                 </div>
 
-                <button class="btn btn-outline" onclick="startCamera()" style="margin-top: 10px;">Bật lại Camera nếu bị
-                    dừng</button>
+                <button class="btn btn-outline" onclick="startCamera()" style="margin-top: 10px;">Bật lại Camera nếu bị dừng</button>
             </div>
 
             <!-- Danh sách điểm danh tay -->
             <div id="attend-manual-box" style="display: none;">
                 <div class="form-group">
-                    <input type="text" id="attend-search" class="form-control" placeholder="Tìm tên hoặc mã ID..."
-                        oninput="renderAttendanceList()">
+                    <input type="text" id="attend-search" class="form-control" placeholder="Tìm theo tên..." oninput="renderAttendanceList()">
                 </div>
                 <div id="attendance-user-list"></div>
             </div>
         </div>
 
-        <!-- TAB 3: TỔNG HỢP LỊCH SỬ TOÀN ĐOÀN (MANAGER & ADMIN) -->
+        <!-- TRANG 5: TỔNG HỢP LỊCH SỬ TOÀN ĐOÀN (MANAGER & ADMIN) -->
         <div id="view-stats" class="tab-view">
             <div class="card" style="padding: 12px;">
                 <div class="pill-tabs" style="margin-bottom: 8px;">
@@ -226,154 +274,201 @@
                     <button class="pill-btn" onclick="switchStatsActivity('SINH HOẠT', this)">SINH HOẠT</button>
                     <button class="pill-btn" onclick="switchStatsActivity('VIỆC CHUNG', this)">VIỆC CHUNG</button>
                 </div>
-                <input type="text" id="stats-search" class="form-control" placeholder="Tìm thành viên..."
-                    oninput="renderAllStats()">
+                <input type="text" id="stats-search" class="form-control" placeholder="Tìm thành viên..." oninput="renderAllStats()">
             </div>
             <div id="all-stats-list"></div>
         </div>
 
-        <!-- TAB 4: QUẢN LÝ TÀI KHOẢN (CHỈ ADMIN) -->
+        <!-- TRANG 6: QUẢN LÝ TÀI KHOẢN (CHỈ ADMIN) -->
         <div id="view-admin" class="tab-view">
             <div style="display: flex; gap: 8px; margin-bottom: 12px;">
-                <input type="text" id="admin-search" class="form-control" placeholder="Tìm thành viên..."
-                    oninput="renderAdminUsers()">
-                <button class="btn btn-primary" style="width: auto; padding: 0 16px; white-space: nowrap;"
-                    onclick="openUserModal(null)">+ Thêm</button>
+                <input type="text" id="admin-search" class="form-control" placeholder="Tìm theo tên hoặc tên đăng nhập..." oninput="renderAdminUsers()">
+                <button class="btn btn-primary" style="width: auto; padding: 0 16px; white-space: nowrap;" onclick="openUserModal(null)">+ Thêm</button>
             </div>
             <div id="admin-user-list"></div>
         </div>
 
     </div>
 
-    <!-- MODAL THÊM / SỬA THÀNH VIÊN CHO ADMIN -->
+    <!-- MODAL XEM & CHỈNH SỬA THÀNH VIÊN CHO ADMIN -->
     <div class="modal-backdrop" id="user-modal">
         <div class="modal-sheet">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
-                <h3 id="modal-title" style="font-size: 16px; font-weight: 700;">Thêm thành viên</h3>
+                <h3 id="modal-title" style="font-size: 16px; font-weight: 700;">Thông tin thành viên</h3>
                 <button class="btn-icon" onclick="closeUserModal()">✕</button>
             </div>
 
             <input type="hidden" id="adm-is-new" value="1">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group">
-                    <label>Mã ID (Tạo QR) *</label>
-                    <input type="text" id="adm-id" class="form-control" placeholder="VD: HT01">
+            <input type="hidden" id="adm-id" value="">
+
+            <!-- PHẦN 1: CHẾ ĐỘ XEM CHI TIẾT (READ-ONLY) -->
+            <div id="adm-view-mode">
+                <div class="profile-hero" style="margin-bottom: 14px; padding: 16px;">
+                    <div class="avatar-lg" id="adm-v-avatar" style="background: var(--primary-light); color: var(--primary); border-color: var(--primary);">?</div>
+                    <span class="badge-role-dark" id="adm-v-role" style="margin-top: 8px;">USER</span>
+                    <h3 id="adm-v-fullname" style="font-size: 17px; font-weight: 700; margin-top: 4px;">...</h3>
+                    <p id="adm-v-sub" style="font-size: 12.5px; color: var(--muted); margin-top: 2px;">...</p>
                 </div>
+
+                <div class="info-list" style="margin-bottom: 16px;">
+                    <div class="info-row">
+                        <span class="info-label">Tên đăng nhập</span>
+                        <span class="info-val" id="adm-v-username">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Giới tính</span>
+                        <span class="info-val" id="adm-v-gender">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày sinh</span>
+                        <span class="info-val" id="adm-v-dob">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Số điện thoại</span>
+                        <span class="info-val" id="adm-v-phone">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Hiện đang là</span>
+                        <span class="info-val" id="adm-v-level">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Chức vụ hiện tại</span>
+                        <span class="info-val" id="adm-v-position">...</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-danger" id="btn-delete-user" onclick="deleteUserByAdmin()">Xóa thành viên</button>
+                    <button class="btn btn-primary" onclick="switchAdminModalToEdit()">Chỉnh sửa</button>
+                </div>
+            </div>
+
+            <!-- PHẦN 2: CHẾ ĐỘ CHỈNH SỬA / THÊM MỚI -->
+            <div id="adm-edit-mode" style="display: none;">
                 <div class="form-group">
                     <label>Tên đăng nhập *</label>
                     <input type="text" id="adm-username" class="form-control" placeholder="VD: an.nguyen">
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>Mật khẩu (Mặc định 123456 nếu để trống khi tạo mới)</label>
-                <input type="text" id="adm-password" class="form-control" placeholder="Nhập mật khẩu...">
-            </div>
-
-            <div class="form-group">
-                <label>Thánh, Họ và tên *</label>
-                <input type="text" id="adm-fullname" class="form-control" placeholder="Giuse Nguyễn Văn An">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                 <div class="form-group">
-                    <label>Giới tính</label>
-                    <select id="adm-gender" class="form-control">
-                        <option value="Nam">Nam</option>
-                        <option value="Nữ">Nữ</option>
+                    <label>Mật khẩu (Mặc định 123456 nếu để trống khi tạo mới)</label>
+                    <input type="text" id="adm-password" class="form-control" placeholder="Nhập mật khẩu...">
+                </div>
+
+                <div class="form-group">
+                    <label>Thánh, Họ và tên *</label>
+                    <input type="text" id="adm-fullname" class="form-control" placeholder="Giuse Nguyễn Văn An">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Giới tính</label>
+                        <select id="adm-gender" class="form-control">
+                            <option value="Nam">Nam</option>
+                            <option value="Nữ">Nữ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Ngày sinh</label>
+                        <input type="text" id="adm-dob" class="form-control" placeholder="dd/mm/yyyy">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Số điện thoại</label>
+                    <input type="tel" id="adm-phone" class="form-control">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group">
+                        <label>Hiện đang là</label>
+                        <select id="adm-level" class="form-control">
+                            <option value="Dự Trưởng">Dự Trưởng</option>
+                            <option value="Huynh Trưởng Cấp 1">Huynh Trưởng Cấp 1</option>
+                            <option value="Huynh Trưởng Cấp 2">Huynh Trưởng Cấp 2</option>
+                            <option value="Cựu Huynh Trưởng">Cựu Huynh Trưởng</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Chức vụ hiện tại</label>
+                        <input type="text" id="adm-position" class="form-control" placeholder="VD: Đoàn phó, Thư ký...">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Phân quyền hệ thống</label>
+                    <select id="adm-role" class="form-control">
+                        <option value="user">User (Thành viên thường)</option>
+                        <option value="manager">Manager (Quản lý điểm danh)</option>
+                        <option value="admin">Admin (Quản trị viên)</option>
                     </select>
                 </div>
+
                 <div class="form-group">
-                    <label>Ngày sinh</label>
-                    <input type="text" id="adm-dob" class="form-control" placeholder="dd/mm/yyyy">
+                    <label>Ảnh đại diện (Tùy chọn)</label>
+                    <input type="file" id="adm-avatar-file" accept="image/*" class="form-control" onchange="previewAvatarFile(this, 'adm-avatar-b64')">
+                    <input type="hidden" id="adm-avatar-b64">
                 </div>
-            </div>
 
-            <div class="form-group">
-                <label>Số điện thoại</label>
-                <input type="tel" id="adm-phone" class="form-control">
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="form-group">
-                    <label>Hiện đang là</label>
-                    <select id="adm-level" class="form-control">
-                        <option value="Dự Trưởng">Dự Trưởng</option>
-                        <option value="Huynh Trưởng Cấp 1">Huynh Trưởng Cấp 1</option>
-                        <option value="Huynh Trưởng Cấp 2">Huynh Trưởng Cấp 2</option>
-                        <option value="Cựu Huynh Trưởng">Cựu Huynh Trưởng</option>
-                    </select>
+                <div style="display: flex; gap: 10px; margin-top: 14px;">
+                    <button class="btn btn-outline" onclick="cancelAdminEdit()">Hủy</button>
+                    <button class="btn btn-primary" onclick="saveUserByAdmin()">Lưu dữ liệu</button>
                 </div>
-                <div class="form-group">
-                    <label>Chức vụ hiện tại</label>
-                    <input type="text" id="adm-position" class="form-control" placeholder="VD: Đoàn phó, Thư ký...">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Phân quyền hệ thống</label>
-                <select id="adm-role" class="form-control">
-                    <option value="user">User (Thành viên thường)</option>
-                    <option value="manager">Manager (Quản lý điểm danh)</option>
-                    <option value="admin">Admin (Quản trị viên)</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Ảnh đại diện (Tùy chọn)</label>
-                <input type="file" id="adm-avatar-file" accept="image/*" class="form-control"
-                    onchange="previewAvatarFile(this, 'adm-avatar-b64')">
-                <input type="hidden" id="adm-avatar-b64">
-            </div>
-
-            <div style="display: flex; gap: 10px; margin-top: 14px;">
-                <button class="btn btn-danger" id="btn-delete-user" style="display: none;"
-                    onclick="deleteUserByAdmin()">Xóa</button>
-                <button class="btn btn-primary" onclick="saveUserByAdmin()">Lưu dữ liệu</button>
             </div>
         </div>
     </div>
 
     <!-- THANH ĐIỀU HƯỚNG DƯỚI CÙNG -->
     <div class="bottom-nav" id="bottom-nav">
-        <button class="nav-item active" data-tab="view-profile"
-            onclick="switchMainTab('view-profile', 'Thẻ Cá Nhân', this)">
+        <!-- Tab Mã QR: Chỉ hiện với User & Manager (Admin ẩn) -->
+        <button class="nav-item role-non-admin" data-tab="view-qr" style="display: none;" onclick="switchMainTab('view-qr', 'Thẻ Điểm Danh', this)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
+                <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
             </svg>
-            <span>Cá nhân</span>
+            <span>Mã QR</span>
         </button>
 
-        <button class="nav-item role-manager" data-tab="view-attendance" style="display: none;"
-            onclick="switchMainTab('view-attendance', 'Điểm Danh', this)">
+        <!-- Tab Lịch sử cá nhân: Chỉ hiện trên thanh nav đối với User thường -->
+        <button class="nav-item role-user-only" data-tab="view-history" style="display: none;" onclick="switchMainTab('view-history', 'Lịch Sử Điểm Danh', this)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 7V5a2 2 0 0 1 2-2h2" />
-                <path d="M17 3h2a2 2 0 0 1 2 2v2" />
-                <path d="M21 17v2a2 2 0 0 1-2 2h-2" />
-                <path d="M7 21H5a2 2 0 0 1-2-2v-2" />
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <span>Lịch sử</span>
+        </button>
+
+        <!-- Tab Điểm danh: Manager & Admin -->
+        <button class="nav-item role-manager" data-tab="view-attendance" style="display: none;" onclick="switchMainTab('view-attendance', 'Điểm Danh', this)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 7V5a2 2 0 0 1 2-2h2" /><path d="M17 3h2a2 2 0 0 1 2 2v2" />
+                <path d="M21 17v2a2 2 0 0 1-2 2h-2" /><path d="M7 21H5a2 2 0 0 1-2-2v-2" />
                 <line x1="7" y1="12" x2="17" y2="12" />
             </svg>
             <span>Điểm danh</span>
         </button>
 
-        <button class="nav-item role-manager" data-tab="view-stats" style="display: none;"
-            onclick="switchMainTab('view-stats', 'Thống Kê', this)">
+        <!-- Tab Thống kê: Manager & Admin -->
+        <button class="nav-item role-manager" data-tab="view-stats" style="display: none;" onclick="switchMainTab('view-stats', 'Thống Kê', this)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="20" x2="18" y2="10" />
-                <line x1="12" y1="20" x2="12" y2="4" />
-                <line x1="6" y1="20" x2="6" y2="14" />
+                <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
             </svg>
             <span>Thống kê</span>
         </button>
 
-        <button class="nav-item role-admin" data-tab="view-admin" style="display: none;"
-            onclick="switchMainTab('view-admin', 'Quản Trị Thành Viên', this)">
+        <!-- Tab Cá nhân: User & Manager -->
+        <button class="nav-item role-non-admin" data-tab="view-profile" style="display: none;" onclick="switchMainTab('view-profile', 'Thông Tin Cá Nhân', this)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" />
+            </svg>
+            <span>Cá nhân</span>
+        </button>
+
+        <!-- Tab Quản lý: Chỉ Admin -->
+        <button class="nav-item role-admin" data-tab="view-admin" style="display: none;" onclick="switchMainTab('view-admin', 'Quản Trị Thành Viên', this)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
             </svg>
             <span>Quản lý</span>
         </button>
