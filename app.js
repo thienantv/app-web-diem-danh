@@ -1094,3 +1094,24 @@ async function deleteUserByAdmin() {
         showToast(res.message, "error");
     }
 }
+
+window.addEventListener("DOMContentLoaded", () => {
+    const container = document.querySelector(".main-container");
+    const topBtn = document.getElementById("scroll-top-btn");
+    if (!container || !topBtn) return;
+
+    container.addEventListener("scroll", () => {
+        if (container.scrollTop > 220) {
+            topBtn.classList.add("show");
+        } else {
+            topBtn.classList.remove("show");
+        }
+    });
+});
+
+function scrollToTopAndSearch() {
+    const container = document.querySelector(".main-container");
+    if (container) {
+        container.scrollTo({ top: 0, behavior: "smooth" });
+    }
+}
