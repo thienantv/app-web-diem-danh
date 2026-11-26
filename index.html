@@ -94,20 +94,36 @@
             </div>
         </div>
 
-        <!-- TRANG 2: LỊCH SỬ ĐIỂM DANH CÁ NHÂN (USER & MANAGER) -->
+        <!-- TRANG 2: LỊCH SỬ ĐIỂM DANH DẠNG MA TRẬN (USER & MANAGER) -->
         <div id="view-history" class="tab-view">
             <button class="btn btn-outline" style="margin-bottom: 12px;" onclick="backToProfileTab()">
                 ← Quay lại thông tin cá nhân
             </button>
-            <div class="card">
-                <div class="card-title">Lịch sử tham dự của tôi</div>
-                <div class="pill-tabs">
-                    <button class="pill-btn active" onclick="switchMyHistoryTab('HỌP', this)">HỌP</button>
-                    <button class="pill-btn" onclick="switchMyHistoryTab('SINH HOẠT', this)">SINH HOẠT</button>
-                    <button class="pill-btn" onclick="switchMyHistoryTab('VIỆC CHUNG', this)">VIỆC CHUNG</button>
+
+            <!-- Thống kê tổng số buổi của từng mảng -->
+            <div class="history-kpi-grid" id="my-history-kpi"></div>
+
+            <!-- Bảng ma trận đối chiếu -->
+            <div class="card" style="padding: 0; overflow: hidden;">
+                <div class="matrix-legend">
+                    <span><i class="dot-present">✓</i> Có mặt</span>
+                    <span><i class="dot-absent">✕</i> Vắng</span>
+                    <span><i class="dot-none">—</i> Không tổ chức</span>
                 </div>
-                <div id="my-history-summary" class="history-summary-banner"></div>
-                <div id="my-history-list"></div>
+
+                <div class="matrix-scroll">
+                    <table class="history-matrix">
+                        <thead>
+                            <tr>
+                                <th class="col-date">Ngày</th>
+                                <th>HỌP</th>
+                                <th>SINH HOẠT</th>
+                                <th>VIỆC CHUNG</th>
+                            </tr>
+                        </thead>
+                        <tbody id="my-history-matrix-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -140,6 +156,10 @@
                     <div class="info-row">
                         <span class="info-label">Thánh, Họ và tên</span>
                         <span class="info-val" id="v-prof-fullname">...</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Ngày bổn mạng</span>
+                        <span class="info-val" id="v-prof-patronday">...</span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Giới tính</span>
@@ -178,6 +198,10 @@
                 <div class="form-group">
                     <label>Thánh, Họ và tên</label>
                     <input type="text" id="prof-fullname" class="form-control">
+                </div>
+                <div class="form-group">
+                    <label>Ngày bổn mạng (dd/mm)</label>
+                    <input type="text" id="prof-patronday" class="form-control" placeholder="VD: 19/03">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div class="form-group">
@@ -312,6 +336,10 @@
                         <span class="info-val" id="adm-v-username">...</span>
                     </div>
                     <div class="info-row">
+                        <span class="info-label">Ngày bổn mạng</span>
+                        <span class="info-val" id="adm-v-patronday">...</span>
+                    </div>
+                    <div class="info-row">
                         <span class="info-label">Giới tính</span>
                         <span class="info-val" id="adm-v-gender">...</span>
                     </div>
@@ -356,6 +384,10 @@
                 <div class="form-group">
                     <label>Thánh, Họ và tên *</label>
                     <input type="text" id="adm-fullname" class="form-control" placeholder="Giuse Nguyễn Văn An">
+                </div>
+                <div class="form-group">
+                    <label>Ngày bổn mạng (dd/mm)</label>
+                    <input type="text" id="adm-patronday" class="form-control" placeholder="VD: 19/03">
                 </div>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">

@@ -2,7 +2,6 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzaGKpNJQwWKMqPMucbh
 
 let currentUser = null;
 let dashboardData = null;
-let currentMyHistoryAct = "HỌP";
 let currentStatsAct = "HỌP";
 let attendSubMode = "qr";
 let selectedAdminUser = null;
@@ -193,41 +192,98 @@ function renderQRPage() {
     });
 }
 
-/* ================= TRANG 2: LỊCH SỬ ĐIỂM DANH CÁ NHÂN ================= */
-function switchMyHistoryTab(actName, btn) {
-    currentMyHistoryAct = actName;
-    btn.parentNode.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    renderMyHistory();
+/* ================= TRANG 2: LỊCH SỬ ĐIỂM DANH DẠNG MA TRẬN ================= */
+function formatDayViFull(shortDay) {
+    const map = {
+        "T2": "Thứ Hai",
+        "T3": "Thứ Ba",
+        "T4": "Thứ Tư",
+        "T5": "Thứ Năm",
+        "T6": "Thứ Sáu",
+        "T7": "Thứ Bảy",
+        "CN": "Chủ Nhật"
+    };
+    return map[shortDay] || shortDay || "";
+}
+
+function parseVnDateToTimestamp(dateStr) {
+    const parts = String(dateStr || "").split("/");
+    if (parts.length !== 3) return 0;
+    return new Date(parseInt(parts[2], 10), parseInt(parts[1], 10) - 1, parseInt(parts[0], 10)).getTime();
 }
 
 function renderMyHistory() {
-    const listEl = document.getElementById("my-history-list");
-    const summaryEl = document.getElementById("my-history-summary");
-    const records = (dashboardData && dashboardData.myHistory[currentMyHistoryAct]) || [];
+    const tbody = document.getElementById("my-history-matrix-body");
+    const kpiEl = document.getElementById("my-history-kpi");
+    if (!tbody || !kpiEl) return;
 
-    if (records.length === 0) {
-        summaryEl.style.display = "none";
-        listEl.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--muted); font-size: 13px;">Chưa có dữ liệu điểm danh mục này</div>`;
+    const activities = ["HỌP", "SINH HOẠT", "VIỆC CHUNG"];
+    const historyData = (dashboardData && dashboardData.myHistory) || {};
+
+    // 1. Render 3 thẻ tổng số buổi ở trên cùng
+    kpiEl.innerHTML = activities.map(act => {
+        const list = historyData[act] || [];
+        const present = list.filter(r => r.present).length;
+        return `
+            <div class="kpi-box">
+                <div class="kpi-box-title">${act}</div>
+                <div class="kpi-box-val">${present}/${list.length}</div>
+            </div>
+        `;
+    }).join("");
+
+    // 2. Gom tất cả các ngày từ 3 mảng vào 1 bảng đối chiếu duy nhất
+    const dateMap = {}; // { "22/11/2026": { date, dayOfWeek, status: { "HỌP": true/false, ... } } }
+
+    activities.forEach(act => {
+        const list = historyData[act] || [];
+        list.forEach(item => {
+            if (!dateMap[item.date]) {
+                dateMap[item.date] = {
+                    date: item.date,
+                    dayOfWeek: item.dayOfWeek,
+                    status: {}
+                };
+            }
+            if (!dateMap[item.date].dayOfWeek && item.dayOfWeek) {
+                dateMap[item.date].dayOfWeek = item.dayOfWeek;
+            }
+            dateMap[item.date].status[act] = item.present;
+        });
+    });
+
+    // Sắp xếp ngày mới nhất lên đầu
+    const sortedRows = Object.values(dateMap).sort(
+        (a, b) => parseVnDateToTimestamp(b.date) - parseVnDateToTimestamp(a.date)
+    );
+
+    if (sortedRows.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" style="padding: 28px 12px; color: var(--muted); font-size: 13px;">
+                    Chưa có dữ liệu điểm danh nào
+                </td>
+            </tr>
+        `;
         return;
     }
 
-    const presentCount = records.filter(r => r.present).length;
-    summaryEl.style.display = "flex";
-    summaryEl.innerHTML = `
-        <span>Tổng buổi tham dự (${currentMyHistoryAct})</span>
-        <span>${presentCount}/${records.length} buổi</span>
-    `;
+    const renderCell = (val) => {
+        if (val === true) return `<span class="mx-badge mx-present" title="Có mặt">✓</span>`;
+        if (val === false) return `<span class="mx-badge mx-absent" title="Vắng mặt">✕</span>`;
+        return `<span class="mx-none" title="Không có hoạt động">—</span>`;
+    };
 
-    listEl.innerHTML = records.map(r => `
-        <div class="history-row">
-            <div>
-                <strong>${r.date}</strong> <span style="color: var(--muted); font-size: 12px;">(${r.dayOfWeek})</span>
-            </div>
-            <span class="status-tag ${r.present ? 'status-present' : 'status-absent'}">
-                ${r.present ? 'Có mặt' : 'Vắng'}
-            </span>
-        </div>
+    tbody.innerHTML = sortedRows.map(row => `
+        <tr>
+            <td class="cell-date">
+                <div class="cell-date-main">${row.date}</div>
+                <div class="cell-date-sub">${formatDayViFull(row.dayOfWeek)}</div>
+            </td>
+            <td>${renderCell(row.status["HỌP"])}</td>
+            <td>${renderCell(row.status["SINH HOẠT"])}</td>
+            <td>${renderCell(row.status["VIỆC CHUNG"])}</td>
+        </tr>
     `).join("");
 }
 
@@ -245,6 +301,7 @@ function renderProfilePage() {
 
     document.getElementById("v-prof-username").textContent = "@" + u.username;
     document.getElementById("v-prof-fullname").textContent = u.fullName || "—";
+    document.getElementById("v-prof-patronday").textContent = u.patronDay || "Chưa cập nhật";
     document.getElementById("v-prof-gender").textContent = u.gender || "—";
     document.getElementById("v-prof-dob").textContent = u.dob || "Chưa cập nhật";
     document.getElementById("v-prof-phone").textContent = u.phone || "Chưa cập nhật";
@@ -253,6 +310,7 @@ function renderProfilePage() {
 
     // Form Chế độ Sửa
     document.getElementById("prof-fullname").value = u.fullName || "";
+    document.getElementById("prof-patronday").value = u.patronDay || "";
     document.getElementById("prof-gender").value = u.gender || "Nam";
     document.getElementById("prof-dob").value = u.dob || "";
     document.getElementById("prof-phone").value = u.phone || "";
@@ -273,6 +331,7 @@ async function saveMyProfile() {
         requesterId: currentUser.id,
         profile: {
             fullName: document.getElementById("prof-fullname").value.trim(),
+            patronDay: document.getElementById("prof-patronday").value.trim(),
             gender: document.getElementById("prof-gender").value,
             dob: document.getElementById("prof-dob").value.trim(),
             phone: document.getElementById("prof-phone").value.trim(),
@@ -803,6 +862,7 @@ function openUserModal(user) {
         document.getElementById("adm-v-sub").textContent = `${user.level || "Thành viên"} • ${user.position || "Chưa cập nhật chức vụ"}`;
 
         document.getElementById("adm-v-username").textContent = "@" + user.username;
+        document.getElementById("adm-v-patronday").textContent = user.patronDay || "Chưa cập nhật";
         document.getElementById("adm-v-gender").textContent = user.gender || "—";
         document.getElementById("adm-v-dob").textContent = user.dob || "Chưa cập nhật";
         document.getElementById("adm-v-phone").textContent = user.phone || "Chưa cập nhật";
@@ -831,6 +891,7 @@ function fillAdminEditForm(user) {
 
     document.getElementById("adm-password").value = "";
     document.getElementById("adm-fullname").value = user ? user.fullName : "";
+    document.getElementById("adm-patronday").value = user ? (user.patronDay || "") : "";
     document.getElementById("adm-gender").value = user ? user.gender : "Nam";
     document.getElementById("adm-dob").value = user ? user.dob : "";
     document.getElementById("adm-phone").value = user ? user.phone : "";
@@ -868,6 +929,7 @@ async function saveUserByAdmin() {
         username: document.getElementById("adm-username").value.trim(),
         password: document.getElementById("adm-password").value.trim(),
         fullName: document.getElementById("adm-fullname").value.trim(),
+        patronDay: document.getElementById("adm-patronday").value.trim(),
         gender: document.getElementById("adm-gender").value,
         dob: document.getElementById("adm-dob").value.trim(),
         phone: document.getElementById("adm-phone").value.trim(),
