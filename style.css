@@ -603,27 +603,44 @@ body {
 #toast.error { background: var(--error); }
 #toast.loading { background: var(--primary); }
 
-/* ================= MODAL CHỈNH SỬA / THÊM USER ================= */
+/* ================= MODAL NỔI CHÍNH GIỮA MÀN HÌNH ================= */
 .modal-backdrop {
     position: fixed;
     inset: 0;
     z-index: 150;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
     display: none;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
+    padding: 16px;
 }
 
-.modal-backdrop.open { display: flex; }
+.modal-backdrop.open {
+    display: flex;
+    animation: fadeInBackdrop 0.18s ease-out;
+}
 
 .modal-sheet {
     background: #fff;
     width: 100%;
-    max-width: 500px;
-    max-height: 90dvh;
-    border-radius: 22px 22px 0 0;
-    padding: 20px 18px 28px;
+    max-width: 440px;
+    max-height: 84dvh;
+    border-radius: 22px;
+    padding: 20px 18px 22px;
     overflow-y: auto;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.28);
+    animation: popCenterModal 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeInBackdrop {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popCenterModal {
+    0% { opacity: 0; transform: scale(0.95) translateY(8px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 /* ================= BOTTOM NAVIGATION ================= */
@@ -765,8 +782,10 @@ body {
 .dot-none { background: #f1f5f9; color: #94a3b8; }
 
 .matrix-scroll {
-    max-height: 62dvh;
+    min-height: 300px;
+    max-height: 56dvh;
     overflow-y: auto;
+    background: #fff;
 }
 
 .history-matrix {
