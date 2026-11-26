@@ -40,7 +40,9 @@ body {
     position: fixed;
     inset: 0;
     z-index: 100;
-    background: linear-gradient(160deg, #0068ff 0%, #003c99 100%);
+    background: 
+        linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)),
+        url('icons/bg_church.jpg') center/cover no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
