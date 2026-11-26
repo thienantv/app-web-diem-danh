@@ -2,7 +2,6 @@ const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzaGKpNJQwWKMqPMucbh
 
 let currentUser = null;
 let dashboardData = null;
-let currentStatsAct = "HỌP";
 let attendSubMode = "qr";
 let selectedAdminUser = null;
 
@@ -756,44 +755,163 @@ function handleScannedQR(scannedId) {
 }
 
 /* ================= TRANG 5: THỐNG KÊ TOÀN ĐOÀN ================= */
-function switchStatsActivity(act, btn) {
-    currentStatsAct = act;
-    btn.parentNode.querySelectorAll(".pill-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-    renderAllStats();
+function buildAttendanceMatrixHTML(historyByAct) {
+    const activities = ["HỌP", "SINH HOẠT", "VIỆC CHUNG"];
+    const dateMap = {};
+
+    activities.forEach(act => {
+        const list = historyByAct[act] || [];
+        list.forEach(item => {
+            if (!dateMap[item.date]) {
+                dateMap[item.date] = {
+                    date: item.date,
+                    dayOfWeek: item.dayOfWeek || item.day || "",
+                    status: {}
+                };
+            }
+            if (!dateMap[item.date].dayOfWeek && (item.dayOfWeek || item.day)) {
+                dateMap[item.date].dayOfWeek = item.dayOfWeek || item.day;
+            }
+            dateMap[item.date].status[act] = item.present;
+        });
+    });
+
+    const sortedRows = Object.values(dateMap).sort(
+        (a, b) => parseVnDateToTimestamp(b.date) - parseVnDateToTimestamp(a.date)
+    );
+
+    if (sortedRows.length === 0) {
+        return `
+            <tr>
+                <td colspan="4" style="padding: 28px 12px; color: var(--muted); font-size: 13px;">
+                    Chưa có dữ liệu điểm danh nào
+                </td>
+            </tr>
+        `;
+    }
+
+    const renderCell = (val) => {
+        if (val === true) return `<span class="mx-badge mx-present" title="Có mặt">✓</span>`;
+        if (val === false) return `<span class="mx-badge mx-absent" title="Vắng mặt">✕</span>`;
+        return `<span class="mx-none" title="Không có hoạt động">—</span>`;
+    };
+
+    return sortedRows.map(row => `
+        <tr>
+            <td class="cell-date">
+                <div class="cell-date-main">${row.date}</div>
+                <div class="cell-date-sub">${formatDayViFull(row.dayOfWeek)}</div>
+            </td>
+            <td>${renderCell(row.status["HỌP"])}</td>
+            <td>${renderCell(row.status["SINH HOẠT"])}</td>
+            <td>${renderCell(row.status["VIỆC CHUNG"])}</td>
+        </tr>
+    `).join("");
 }
 
 function renderAllStats() {
     if (!dashboardData) return;
-    const list = dashboardData.allHistorySummary[currentStatsAct] || [];
     const kw = document.getElementById("stats-search").value.toLowerCase().trim();
-    const filtered = list.filter(item =>
-        item.fullName.toLowerCase().includes(kw)
+    const summary = dashboardData.allHistorySummary || {};
+    const activities = ["HỌP", "SINH HOẠT", "VIỆC CHUNG"];
+
+    // Lập bản đồ tra cứu nhanh theo từng thành viên (loại bỏ admin)
+    const memberMap = {};
+    (dashboardData.members || []).forEach(m => {
+        if (m.role === "admin") return;
+        memberMap[m.id] = {
+            id: m.id,
+            fullName: m.fullName,
+            level: m.level || "Thành viên",
+            position: m.position || "",
+            avatar: m.avatar || "",
+            stats: {
+                "HỌP": { present: 0, total: 0, records: [] },
+                "SINH HOẠT": { present: 0, total: 0, records: [] },
+                "VIỆC CHUNG": { present: 0, total: 0, records: [] }
+            }
+        };
+    });
+
+    activities.forEach(act => {
+        (summary[act] || []).forEach(item => {
+            if (memberMap[item.id]) {
+                memberMap[item.id].stats[act] = {
+                    present: item.presentCount,
+                    total: item.totalSessions,
+                    records: item.recent || []
+                };
+            }
+        });
+    });
+
+    const filtered = Object.values(memberMap).filter(m =>
+        m.fullName.toLowerCase().includes(kw)
     );
 
-    document.getElementById("all-stats-list").innerHTML = filtered.map(item => `
-        <div class="card" style="padding: 12px 14px; margin-bottom: 10px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <div class="avatar-sm">${renderAvatarHTML(item.avatar, item.fullName)}</div>
-                    <div>
-                        <div style="font-size: 14px; font-weight: 600;">${item.fullName}</div>
-                        <div style="font-size: 11.5px; color: var(--muted);">${item.level || 'Thành viên'}</div>
+    document.getElementById("all-stats-list").innerHTML = filtered.map(m => `
+        <div class="stats-member-card" onclick="openMemberStatsModal('${m.id}')">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 11px; min-width: 0;">
+                    <div class="avatar-sm">${renderAvatarHTML(m.avatar, m.fullName)}</div>
+                    <div style="min-width: 0;">
+                        <div style="font-size: 14.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${m.fullName}</div>
+                        <div style="font-size: 12px; color: var(--muted);">${m.level}${m.position ? ' • ' + m.position : ''}</div>
                     </div>
                 </div>
-                <span class="status-tag status-present">${item.presentCount}/${item.totalSessions} buổi</span>
+                <span style="color: var(--muted); font-size: 16px; flex-shrink: 0;">›</span>
             </div>
-            ${item.recent.length > 0 ? `
-                <div style="display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border);">
-                    ${item.recent.map(d => `
-                        <span style="font-size: 11px; padding: 2px 7px; border-radius: 6px; background: ${d.present ? 'var(--success-bg)' : 'var(--error-bg)'}; color: ${d.present ? 'var(--success)' : 'var(--error)'};">
-                            ${d.date.slice(0, 5)}: ${d.present ? '✓' : '✕'}
-                        </span>
-                    `).join("")}
+
+            <div class="stats-badges-row">
+                <div class="stat-pill-item">
+                    Họp
+                    <strong>${m.stats["HỌP"].present}/${m.stats["HỌP"].total} buổi</strong>
                 </div>
-            ` : ''}
+                <div class="stat-pill-item">
+                    Sinh hoạt
+                    <strong>${m.stats["SINH HOẠT"].present}/${m.stats["SINH HOẠT"].total} buổi</strong>
+                </div>
+                <div class="stat-pill-item">
+                    Việc chung
+                    <strong>${m.stats["VIỆC CHUNG"].present}/${m.stats["VIỆC CHUNG"].total} buổi</strong>
+                </div>
+            </div>
         </div>
     `).join("");
+}
+
+function openMemberStatsModal(memberId) {
+    if (!dashboardData) return;
+    const member = (dashboardData.members || []).find(m => m.id === memberId);
+    if (!member) return;
+
+    const activities = ["HỌP", "SINH HOẠT", "VIỆC CHUNG"];
+    const summary = dashboardData.allHistorySummary || {};
+    const historyByAct = {};
+
+    document.getElementById("ms-avatar").innerHTML = renderAvatarHTML(member.avatar, member.fullName);
+    document.getElementById("ms-fullname").textContent = member.fullName;
+    document.getElementById("ms-sub").textContent = `${member.level || "Thành viên"}${member.position ? " • " + member.position : ""}`;
+
+    document.getElementById("ms-kpi-grid").innerHTML = activities.map(act => {
+        const found = (summary[act] || []).find(x => x.id === memberId);
+        const present = found ? found.presentCount : 0;
+        const total = found ? found.totalSessions : 0;
+        historyByAct[act] = found ? (found.recent || []) : [];
+        return `
+            <div class="kpi-box">
+                <div class="kpi-box-title">${act}</div>
+                <div class="kpi-box-val">${present}/${total}</div>
+            </div>
+        `;
+    }).join("");
+
+    document.getElementById("ms-matrix-body").innerHTML = buildAttendanceMatrixHTML(historyByAct);
+    document.getElementById("member-stats-modal").classList.add("open");
+}
+
+function closeMemberStatsModal() {
+    document.getElementById("member-stats-modal").classList.remove("open");
 }
 
 /* ================= TRANG 6: QUẢN TRỊ TÀI KHOẢN (XEM TRƯỚC -> SỬA SAU) ================= */
