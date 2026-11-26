@@ -1,11 +1,13 @@
-const CACHE_NAME = "diemdanh-pwa-v3";
+const CACHE_NAME = "diemdanh-pwa-v4";
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./app.js",
   "./manifest.json",
-  "./icons/Logotachnen1.png"
+  "./icons/Logotachnen1.png",
+  "./icons/Logoweb.png",
+  "./icons/bg_church.jpg"
 ];
 
 self.addEventListener("install", (e) => {
