@@ -935,3 +935,47 @@ body {
     pointer-events: auto;
     transform: translateY(0);
 }
+
+/* ================= NÚT CON MẮT XEM MẬT KHẨU ================= */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-wrapper .form-control {
+    padding-right: 42px;
+}
+
+.toggle-pass-btn {
+    position: absolute;
+    right: 6px;
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: transparent;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 8px;
+}
+
+.toggle-pass-btn:active {
+    background: var(--bg);
+    color: var(--primary);
+}
+
+/* Ẩn biểu tượng con mắt mặc định của trình duyệt Edge / Chrome trên máy tính */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-contacts-auto-fill-button {
+    visibility: hidden;
+    display: none !important;
+    pointer-events: none;
+}

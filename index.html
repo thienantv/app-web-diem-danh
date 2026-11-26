@@ -42,7 +42,17 @@
             </div>
             <div class="form-group">
                 <label>Mật khẩu</label>
-                <input type="password" id="login-password" class="form-control" placeholder="Nhập mật khẩu">
+                <div class="password-wrapper">
+                    <input type="password" id="login-password" class="form-control" placeholder="Nhập mật khẩu">
+                    <button type="button" class="toggle-pass-btn" onclick="togglePassword('login-password', this)"
+                        aria-label="Hiện/ẩn mật khẩu">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+                </div>
             </div>
             <button class="btn btn-primary" onclick="handleLogin()" style="margin-top: 8px;">Đăng nhập</button>
         </div>
@@ -224,7 +234,18 @@
                 </div>
                 <div class="form-group">
                     <label>Đổi mật khẩu mới (Để trống nếu giữ nguyên)</label>
-                    <input type="password" id="prof-password" class="form-control" placeholder="Nhập mật khẩu mới...">
+                    <div class="password-wrapper">
+                        <input type="password" id="prof-password" class="form-control"
+                            placeholder="Nhập mật khẩu mới...">
+                        <button type="button" class="toggle-pass-btn" onclick="togglePassword('prof-password', this)"
+                            aria-label="Hiện/ẩn mật khẩu">
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
                 <div style="display: flex; gap: 10px; margin-top: 8px;">
                     <button class="btn btn-outline" onclick="toggleProfileEdit(false)">Hủy bỏ</button>
@@ -449,7 +470,18 @@
                 <!-- Đổi mật khẩu nằm ở cuối cùng giống hệt trang Thông tin cá nhân -->
                 <div class="form-group">
                     <label id="adm-password-label">Đổi mật khẩu mới (Để trống nếu giữ nguyên)</label>
-                    <input type="password" id="adm-password" class="form-control" placeholder="Nhập mật khẩu mới...">
+                    <div class="password-wrapper">
+                        <input type="password" id="adm-password" class="form-control"
+                            placeholder="Nhập mật khẩu mới...">
+                        <button type="button" class="toggle-pass-btn" onclick="togglePassword('adm-password', this)"
+                            aria-label="Hiện/ẩn mật khẩu">
+                            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div style="display: flex; gap: 10px; margin-top: 16px;">
