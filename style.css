@@ -25,7 +25,8 @@
 body {
     background: var(--bg);
     color: var(--text);
-    height: 100dvh;
+    height: 100svh;
+    min-height: -webkit-fill-available;
     width: 100vw;
     max-width: 500px;
     margin: 0 auto;
@@ -40,9 +41,14 @@ body {
     position: fixed;
     inset: 0;
     z-index: 100;
-    background: 
+    background-color: #0f172a;
+    /* Màu nền lót tức thì, chống chớp trắng */
+    background-image:
         linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)),
-        url('icons/bg_church.jpg') center/cover no-repeat;
+        url('icons/bg_church.jpg');
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -138,10 +144,25 @@ body {
     transition: 0.2s;
 }
 
-.btn-primary { background: var(--primary); color: #fff; }
-.btn-primary:active { background: var(--primary-dark); }
-.btn-danger { background: var(--error-bg); color: var(--error); }
-.btn-outline { background: var(--card); color: var(--text); border: 1px solid var(--border); }
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+}
+
+.btn-primary:active {
+    background: var(--primary-dark);
+}
+
+.btn-danger {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.btn-outline {
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
 
 .btn-sm-primary {
     padding: 6px 13px;
@@ -207,8 +228,13 @@ body {
     padding: 14px 16px 84px;
 }
 
-.tab-view { display: none; }
-.tab-view.active { display: block; }
+.tab-view {
+    display: none;
+}
+
+.tab-view.active {
+    display: block;
+}
 
 /* ================= TRANG MÃ QR RIÊNG BIỆT ================= */
 .id-card {
@@ -243,7 +269,9 @@ body {
     margin: 0 auto;
 }
 
-.id-card-top .avatar-lg { margin: 0; }
+.id-card-top .avatar-lg {
+    margin: 0;
+}
 
 .avatar-xl {
     width: 78px;
@@ -329,9 +357,22 @@ body {
     font-size: 13.5px;
 }
 
-.info-row:last-child { border-bottom: none; }
-.info-label { color: var(--muted); font-size: 13px; flex-shrink: 0; }
-.info-val { font-weight: 600; color: var(--text); text-align: right; word-break: break-word; }
+.info-row:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: var(--muted);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.info-val {
+    font-weight: 600;
+    color: var(--text);
+    text-align: right;
+    word-break: break-word;
+}
 
 /* ================= SECTION CARDS & LỊCH SỬ ================= */
 .card {
@@ -400,7 +441,9 @@ body {
     font-size: 13.5px;
 }
 
-.history-row:last-child { border-bottom: none; }
+.history-row:last-child {
+    border-bottom: none;
+}
 
 .status-tag {
     padding: 4px 10px;
@@ -409,8 +452,15 @@ body {
     font-weight: 600;
 }
 
-.status-present { background: var(--success-bg); color: var(--success); }
-.status-absent { background: var(--error-bg); color: var(--error); }
+.status-present {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.status-absent {
+    background: var(--error-bg);
+    color: var(--error);
+}
 
 /* ================= MÀN HÌNH QUÉT QR & ĐIỂM DANH TAY ================= */
 .scanner-container {
@@ -444,7 +494,9 @@ body {
     transition: transform 0.15s;
 }
 
-.zalo-frame.detected { transform: scale(1.04); }
+.zalo-frame.detected {
+    transform: scale(1.04);
+}
 
 .corner {
     position: absolute;
@@ -454,11 +506,37 @@ body {
     border-style: solid;
 }
 
-.zalo-frame.detected .corner { border-color: var(--success); }
-.c-tl { top: -2px; left: -2px; border-width: 4px 0 0 4px; border-top-left-radius: 18px; }
-.c-tr { top: -2px; right: -2px; border-width: 4px 4px 0 0; border-top-right-radius: 18px; }
-.c-bl { bottom: -2px; left: -2px; border-width: 0 0 4px 4px; border-bottom-left-radius: 18px; }
-.c-br { bottom: -2px; right: -2px; border-width: 0 4px 4px 0; border-bottom-right-radius: 18px; }
+.zalo-frame.detected .corner {
+    border-color: var(--success);
+}
+
+.c-tl {
+    top: -2px;
+    left: -2px;
+    border-width: 4px 0 0 4px;
+    border-top-left-radius: 18px;
+}
+
+.c-tr {
+    top: -2px;
+    right: -2px;
+    border-width: 4px 4px 0 0;
+    border-top-right-radius: 18px;
+}
+
+.c-bl {
+    bottom: -2px;
+    left: -2px;
+    border-width: 0 0 4px 4px;
+    border-bottom-left-radius: 18px;
+}
+
+.c-br {
+    bottom: -2px;
+    right: -2px;
+    border-width: 0 4px 4px 0;
+    border-bottom-right-radius: 18px;
+}
 
 .scan-laser {
     position: absolute;
@@ -470,10 +548,23 @@ body {
 }
 
 @keyframes laserMove {
-    0% { top: 12px; opacity: 0; }
-    20% { opacity: 1; }
-    80% { opacity: 1; }
-    100% { top: 182px; opacity: 0; }
+    0% {
+        top: 12px;
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 1;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        top: 182px;
+        opacity: 0;
+    }
 }
 
 /* ================= THẺ XÁC NHẬN SAU KHI QUÉT QR ================= */
@@ -523,11 +614,20 @@ body {
     animation: popInCard 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.scan-card-body .avatar-lg { margin: 0; }
+.scan-card-body .avatar-lg {
+    margin: 0;
+}
 
 @keyframes popInCard {
-    0% { opacity: 0; transform: translateY(6px) scale(0.98); }
-    100% { opacity: 1; transform: translateY(0) scale(1); }
+    0% {
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .scan-card-status {
@@ -600,10 +700,22 @@ body {
     text-align: center;
 }
 
-#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-#toast.success { background: var(--success); }
-#toast.error { background: var(--error); }
-#toast.loading { background: var(--primary); }
+#toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+#toast.success {
+    background: var(--success);
+}
+
+#toast.error {
+    background: var(--error);
+}
+
+#toast.loading {
+    background: var(--primary);
+}
 
 /* ================= MODAL NỔI CHÍNH GIỮA MÀN HÌNH ================= */
 .modal-backdrop {
@@ -636,13 +748,25 @@ body {
 }
 
 @keyframes fadeInBackdrop {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes popCenterModal {
-    0% { opacity: 0; transform: scale(0.95) translateY(8px); }
-    100% { opacity: 1; transform: scale(1) translateY(0); }
+    0% {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
 }
 
 /* ================= BOTTOM NAVIGATION ================= */
@@ -676,7 +800,9 @@ body {
     cursor: pointer;
 }
 
-.nav-item.active { color: var(--primary); }
+.nav-item.active {
+    color: var(--primary);
+}
 
 /* ================= MODAL CẮT ẢNH ĐẠI DIỆN (CROPPER) ================= */
 .crop-card {
@@ -779,9 +905,20 @@ body {
     justify-content: center;
 }
 
-.dot-present { background: var(--success-bg); color: var(--success); }
-.dot-absent { background: var(--error-bg); color: var(--error); }
-.dot-none { background: #f1f5f9; color: #94a3b8; }
+.dot-present {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.dot-absent {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.dot-none {
+    background: #f1f5f9;
+    color: #94a3b8;
+}
 
 .matrix-scroll {
     min-height: 300px;
@@ -862,9 +999,21 @@ body {
     font-weight: 700;
 }
 
-.mx-present { background: var(--success-bg); color: var(--success); }
-.mx-absent { background: var(--error-bg); color: var(--error); }
-.mx-none { color: #cbd5e1; font-weight: 600; font-size: 14px; }
+.mx-present {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.mx-absent {
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.mx-none {
+    color: #cbd5e1;
+    font-weight: 600;
+    font-size: 14px;
+}
 
 /* ================= THẺ THỐNG KÊ TỔNG HỢP TỪNG THÀNH VIÊN ================= */
 .stats-member-card {
