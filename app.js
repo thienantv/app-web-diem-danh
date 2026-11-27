@@ -428,7 +428,7 @@ async function downloadQRCardImage() {
         ctx.fillStyle = "#6b7280";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText("Đưa mã QR này cho Ban điều hành để điểm danh", W / 2, boxY + boxH - 64);
+        ctx.fillText("Mã QR điểm danh HỌP, SINH HOẠT và VIỆC CHUNG", W / 2, boxY + boxH - 64);
 
         // 6. Xuất file PNG & kích hoạt tải về máy
         const safeFileName = `QR_${(currentUser.fullName || "")
