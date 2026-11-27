@@ -276,6 +276,187 @@ function renderQRPage() {
     });
 }
 
+/* ================= XUẤT & TẢI ẢNH THẺ QR ĐỘ PHÂN GIẢI CAO ================= */
+function drawRoundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+}
+
+function loadImageSafe(src) {
+    return new Promise((resolve) => {
+        if (!src || !src.trim()) return resolve(null);
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+    });
+}
+
+async function downloadQRCardImage() {
+    if (!currentUser) return;
+    const btn = document.getElementById("btn-download-qr");
+    const oldHtml = btn ? btn.innerHTML : "";
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-sm" style="border-color: rgba(0,104,255,0.25); border-top-color: var(--primary);"></span> Đang tạo ảnh...`;
+    }
+
+    try {
+        // Đảm bảo font Inter đã sẵn sàng để vẽ chữ sắc nét
+        if (document.fonts && document.fonts.ready) {
+            await document.fonts.ready;
+        }
+
+        const W = 900;
+        const H = 1040;
+        const canvas = document.createElement("canvas");
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext("2d");
+
+        // 1. Nền thẻ xanh chuyển sắc bo góc y hệt .id-card
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, "#0068ff");
+        grad.addColorStop(1, "#0044aa");
+        drawRoundRectPath(ctx, 0, 0, W, H, 52);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // 2. Avatar tròn bên trái phía trên
+        const avtX = 56;
+        const avtY = 56;
+        const avtSize = 152;
+        const avtRadius = avtSize / 2;
+        const avtCenterX = avtX + avtRadius;
+        const avtCenterY = avtY + avtRadius;
+
+        const avtImg = await loadImageSafe(currentUser.avatar);
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(avtCenterX, avtCenterY, avtRadius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+
+        if (avtImg) {
+            // Vẽ ảnh cover vừa khít khung tròn
+            const scale = Math.max(avtSize / avtImg.width, avtSize / avtImg.height);
+            const dw = avtImg.width * scale;
+            const dh = avtImg.height * scale;
+            ctx.drawImage(avtImg, avtCenterX - dw / 2, avtCenterY - dh / 2, dw, dh);
+        } else {
+            ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+            ctx.fillRect(avtX, avtY, avtSize, avtSize);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "700 58px Inter, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(getInitials(currentUser.fullName), avtCenterX, avtCenterY + 3);
+        }
+        ctx.restore();
+
+        // Viền trắng quanh avatar
+        ctx.beginPath();
+        ctx.arc(avtCenterX, avtCenterY, avtRadius, 0, Math.PI * 2);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.stroke();
+
+        // 3. Cụm thông tin bên phải avatar (Cấp bậc, Tên, Chức vụ)
+        const infoX = avtX + avtSize + 34;
+        const maxTextW = W - infoX - 50;
+
+        // Pill cấp bậc
+        const levelText = currentUser.level || "Thành viên";
+        ctx.font = "600 25px Inter, sans-serif";
+        const pillPadX = 24;
+        const pillH = 46;
+        const pillW = Math.min(ctx.measureText(levelText).width + pillPadX * 2, maxTextW);
+        drawRoundRectPath(ctx, infoX, 58, pillW, pillH, 23);
+        ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText(levelText, infoX + pillPadX, 58 + pillH / 2 + 1, maxTextW - pillPadX * 2);
+
+        // Thánh, Họ và tên
+        ctx.font = "700 41px Inter, sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(currentUser.fullName || "", infoX, 140, maxTextW);
+
+        // Chức vụ hiện tại
+        ctx.font = "500 30px Inter, sans-serif";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+        ctx.fillText(currentUser.position || "Chưa cập nhật chức vụ", infoX, 192, maxTextW);
+
+        // 4. Khung trắng chứa mã QR ở phía dưới
+        const boxX = 52;
+        const boxY = 256;
+        const boxW = W - boxX * 2;
+        const boxH = H - boxY - 52;
+        drawRoundRectPath(ctx, boxX, boxY, boxW, boxH, 42);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+
+        // Lấy dữ liệu mã QR trực tiếp từ phần tử #my-qrcode đang hiển thị
+        const qrContainer = document.getElementById("my-qrcode");
+        const qrCanvasEl = qrContainer ? qrContainer.querySelector("canvas") : null;
+        const qrImgEl = qrContainer ? qrContainer.querySelector("img") : null;
+
+        const qrDrawSize = 490;
+        const qrX = (W - qrDrawSize) / 2;
+        const qrY = boxY + 76;
+
+        // Tắt làm mờ để các ô vuông mã QR sắc nét tuyệt đối khi quét
+        ctx.imageSmoothingEnabled = false;
+        if (qrCanvasEl) {
+            ctx.drawImage(qrCanvasEl, qrX, qrY, qrDrawSize, qrDrawSize);
+        } else if (qrImgEl) {
+            ctx.drawImage(qrImgEl, qrX, qrY, qrDrawSize, qrDrawSize);
+        }
+        ctx.imageSmoothingEnabled = true;
+
+        // 5. Dòng hướng dẫn phía dưới mã QR
+        ctx.font = "500 28px Inter, sans-serif";
+        ctx.fillStyle = "#6b7280";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("Đưa mã QR này cho Ban điều hành để điểm danh", W / 2, boxY + boxH - 64);
+
+        // 6. Xuất file PNG & kích hoạt tải về máy
+        const safeFileName = `QR_${(currentUser.fullName || "")
+            .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+            .replace(/[^a-zA-Z0-9]/g, "_")}.png`;
+
+        canvas.toBlob(async (blob) => {
+            if (!blob) return;
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = safeFileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+            showToast("Đã tải ảnh thẻ QR về máy!", "success", 2000);
+        }, "image/png");
+    } catch (e) {
+        showToast("Không thể tạo ảnh thẻ QR!", "error");
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = oldHtml;
+        }
+    }
+}
+
 /* ================= TRANG 2: LỊCH SỬ ĐIỂM DANH DẠNG MA TRẬN ================= */
 function formatDayViFull(shortDay) {
     const map = {
