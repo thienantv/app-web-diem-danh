@@ -111,7 +111,6 @@ async function handleLogin() {
         return;
     }
 
-    // Khóa chặt form & nút bấm chống spam
     isLoggingIn = true;
     usernameInput.disabled = true;
     passwordInput.disabled = true;
@@ -125,12 +124,29 @@ async function handleLogin() {
             return;
         }
 
-        // Nhận trọn gói user + toàn bộ dữ liệu dashboard ngay trong 1 lần gọi
-        currentUser = res.currentUser || res.user;
+        // 1. Lưu user & mở ngay giao diện chính trong 0.05s
+        currentUser = res.user;
+        localStorage.setItem("dd_user", JSON.stringify(currentUser));
         document.getElementById("login-screen").style.display = "none";
         setupNavigationByRole(true);
-        renderAllViewsFromDashboard(res);
-        showToast("Đăng nhập thành công!", "success", 1800);
+
+        if (currentUser.role !== "admin") renderQRPage();
+        renderProfilePage();
+        showToast("Đăng nhập thành công!", "success", 1500);
+
+        // 2. Nếu máy đã từng lưu cache của user này thì đổ ra luôn
+        const cachedDash = localStorage.getItem("dd_dashboard_cache");
+        if (cachedDash) {
+            try {
+                const parsed = JSON.parse(cachedDash);
+                if (parsed?.currentUser?.id === currentUser.id) {
+                    renderAllViewsFromDashboard(parsed);
+                }
+            } catch (e) { }
+        }
+
+        // 3. Âm thầm tải danh sách điểm danh & lịch sử ở chế độ nền
+        refreshDashboard(false);
     } catch (e) {
         showToast("Lỗi kết nối máy chủ!", "error");
     } finally {
