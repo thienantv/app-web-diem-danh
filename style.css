@@ -27,8 +27,8 @@ body {
     color: var(--text);
     height: 100svh;
     min-height: -webkit-fill-available;
-    width: 100%;
-    max-width: 960px;
+    width: 100vw;
+    max-width: 500px;
     margin: 0 auto;
     overflow: hidden;
     display: flex;
@@ -776,7 +776,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     width: 100%;
-    max-width: 960px;
+    max-width: 500px;
     height: 66px;
     background: #fff;
     border-top: 1px solid var(--border);
@@ -1150,88 +1150,4 @@ input[type="password"]::-webkit-contacts-auto-fill-button {
 
 @keyframes spinBtn {
     to { transform: rotate(360deg); }
-}
-
-/* ================= CĂN GIỮA CHUẨN CHO TẤT CẢ NÚT BẤM ================= */
-.btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    width: 100%;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* ================= TỰ ĐỘNG CO GIÃN FULL KHUNG CHO IPAD & MÀN HÌNH LỚN ================= */
-@media (min-width: 680px) {
-    .app-header {
-        padding: 14px 24px;
-        border-left: 1px solid var(--border);
-        border-right: 1px solid var(--border);
-    }
-
-    .main-container {
-        padding: 20px 24px 90px;
-        border-left: 1px solid var(--border);
-        border-right: 1px solid var(--border);
-        background: var(--bg);
-    }
-
-    .bottom-nav {
-        border-left: 1px solid var(--border);
-        border-right: 1px solid var(--border);
-    }
-
-    /* Thẻ QR, Hồ sơ cá nhân & Bảng lịch sử giãn rộng 100% theo khung trang */
-    #view-qr .id-card,
-    #view-qr #btn-download-qr,
-    #view-profile .profile-hero,
-    #view-profile .role-non-admin,
-    #view-profile .card,
-    #view-history .btn-outline,
-    #view-history .history-kpi-grid,
-    #view-history .card {
-        width: 100%;
-        max-width: 100%;
-    }
-
-    /* Nới rộng bảng ma trận lịch sử trên màn hình lớn cho thoáng mắt */
-    .history-matrix thead th,
-    .history-matrix td {
-        padding: 13px 10px;
-        font-size: 13px;
-    }
-
-    .history-matrix thead th.col-date,
-    .history-matrix td.cell-date {
-        width: 34%;
-        padding-left: 20px;
-    }
-
-    /* Tự động chia 2 cột cho danh sách Điểm danh tay, Thống kê & Quản lý trên iPad */
-    #attendance-user-list,
-    #all-stats-list,
-    #admin-user-list {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 12px;
-        align-items: start;
-    }
-
-    #attendance-user-list .user-item,
-    #all-stats-list .stats-member-card,
-    #admin-user-list .user-item {
-        margin-bottom: 0;
-    }
-
-    /* Camera quét QR rộng và thoáng hơn trên iPad */
-    .scanner-container {
-        height: 360px;
-    }
-
-    /* Nút cuộn lên đầu trang nằm gọn trong khung 960px */
-    .scroll-top-btn {
-        right: max(24px, calc((100vw - 960px) / 2 + 24px));
-    }
 }
