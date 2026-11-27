@@ -5,9 +5,9 @@ const ASSETS = [
   "./style.css",
   "./app.js",
   "./manifest.json",
-  "./icons/Logotachnen1.png",
-  "./icons/Logoweb.png",
-  "./icons/bg_church.jpg"
+  "./images/Logotachnen1.png",
+  "./images/Logoweb.png",
+  "./images/bg_church.jpg"
 ];
 
 self.addEventListener("install", (e) => {

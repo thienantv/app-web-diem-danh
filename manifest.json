@@ -8,19 +8,19 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "icons/Logotachnen1.png",
+      "src": "images/Logotachnen1.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/Logotachnen1.png",
+      "src": "images/Logotachnen1.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "icons/Logotachnen1.png",
+      "src": "images/Logotachnen1.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

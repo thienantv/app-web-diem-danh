@@ -45,7 +45,7 @@ body {
     /* Màu nền lót tức thì, chống chớp trắng */
     background-image:
         linear-gradient(rgba(15, 23, 42, 0.45), rgba(15, 23, 42, 0.55)),
-        url('icons/bg_church.jpg');
+        url('images/bg_church.jpg');
     background-position: center;
     background-size: cover;
     background-repeat: no-repeat;
@@ -1129,4 +1129,25 @@ input[type="password"]::-webkit-contacts-auto-fill-button {
     visibility: hidden;
     display: none !important;
     pointer-events: none;
+}
+
+/* ================= TRẠNG THÁI KHÓA NÚT & SPINNER ================= */
+.btn:disabled {
+    opacity: 0.72;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.spinner-sm {
+    width: 16px;
+    height: 16px;
+    border: 2.2px solid rgba(255, 255, 255, 0.35);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: spinBtn 0.7s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spinBtn {
+    to { transform: rotate(360deg); }
 }

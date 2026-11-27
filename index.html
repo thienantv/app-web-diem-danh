@@ -5,13 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#ffffff">
     <title>Điểm Danh QR</title>
 
     <!-- Icon & PWA -->
-    <link rel="icon" type="image/png" href="./icons/Logoweb.png">
-    <link rel="apple-touch-icon" href="./icons/Logotachnen1.png">
+    <link rel="icon" type="image/png" href="./images/Logoweb.png">
+    <link rel="apple-touch-icon" href="./images/Logotachnen1.png">
     <link rel="manifest" href="./manifest.json">
 
     <!-- Fonts & Styles -->
@@ -23,7 +24,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- Nền login -->
-    <link rel="preload" as="image" href="icons/bg_church.jpg">
+    <link rel="preload" as="image" href="images/bg_church.jpg">
 </head>
 
 <body>
@@ -32,33 +33,33 @@
 
     <!-- 1. MÀN HÌNH ĐĂNG NHẬP -->
     <div id="login-screen">
-        <div class="login-card">
+        <form class="login-card" onsubmit="event.preventDefault(); handleLogin();">
             <div class="login-logo">
-                <img src="./icons/Logotachnen1.png" alt="Logo Điểm Danh QR">
+                <img src="./images/Logotachnen1.png" alt="Logo Điểm Danh QR">
             </div>
             <h1>Điểm Danh QR</h1>
             <p>Đăng nhập để xem thẻ QR & Điểm danh</p>
 
             <div class="form-group">
                 <label>Tên đăng nhập</label>
-                <input type="text" id="login-username" class="form-control" placeholder="Nhập tên đăng nhập">
+                <input type="text" id="login-username" class="form-control" placeholder="Nhập tên đăng nhập" autocomplete="username">
             </div>
             <div class="form-group">
                 <label>Mật khẩu</label>
                 <div class="password-wrapper">
-                    <input type="password" id="login-password" class="form-control" placeholder="Nhập mật khẩu">
-                    <button type="button" class="toggle-pass-btn" onclick="togglePassword('login-password', this)"
-                        aria-label="Hiện/ẩn mật khẩu">
-                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
+                    <input type="password" id="login-password" class="form-control" placeholder="Nhập mật khẩu" autocomplete="current-password">
+                    <button type="button" class="toggle-pass-btn" onclick="togglePassword('login-password', this)" aria-label="Hiện/ẩn mật khẩu">
+                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                         </svg>
                     </button>
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="handleLogin()" style="margin-top: 8px;">Đăng nhập</button>
-        </div>
+            <button type="submit" id="btn-login-submit" class="btn btn-primary" style="margin-top: 8px;">
+                Đăng nhập
+            </button>
+        </form>
     </div>
 
     <!-- HEADER CHÍNH -->
@@ -121,7 +122,7 @@
                 <div class="matrix-legend">
                     <span><i class="dot-present">✓</i> Có mặt</span>
                     <span><i class="dot-absent">✕</i> Vắng</span>
-                    <span><i class="dot-none">—</i> Không tổ chức</span>
+                    <span><i class="dot-none">—</i> Không điểm danh</span>
                 </div>
 
                 <div class="matrix-scroll">
@@ -551,7 +552,7 @@
                 <div class="matrix-legend">
                     <span><i class="dot-present">✓</i> Có mặt</span>
                     <span><i class="dot-absent">✕</i> Vắng</span>
-                    <span><i class="dot-none">—</i> Không tổ chức</span>
+                    <span><i class="dot-none">—</i> Không điểm danh</span>
                 </div>
                 <div class="matrix-scroll">
                     <table class="history-matrix">

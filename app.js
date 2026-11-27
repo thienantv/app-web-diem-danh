@@ -41,92 +41,118 @@ function showToast(msg, type = "", duration = 2500) {
     }
 }
 
-/* ================= ĐĂNG NHẬP & ĐIỀU HƯỚNG THEO ROLE ================= */
+/* ================= ĐĂNG NHẬP & TẢI DỮ LIỆU TỨC THÌ ================= */
+let isLoggingIn = false;
+let isRefreshingDashboard = false;
+
+function renderAllViewsFromDashboard(res) {
+    dashboardData = res;
+    currentUser = res.currentUser;
+    localStorage.setItem("dd_user", JSON.stringify(currentUser));
+    // Lưu cache toàn bộ dashboard để lần mở app sau hiển thị ngay lập tức (0ms)
+    try {
+        localStorage.setItem("dd_dashboard_cache", JSON.stringify(res));
+    } catch (e) { }
+
+    setupNavigationByRole(false);
+    document.getElementById("header-date").textContent = "Hôm nay: " + res.today;
+
+    if (currentUser.role !== "admin") {
+        renderQRPage();
+        renderMyHistory();
+    }
+    renderProfilePage();
+
+    if (currentUser.role === "manager" || currentUser.role === "admin") {
+        renderAttendanceList();
+        renderAllStats();
+    }
+    if (currentUser.role === "admin") {
+        renderAdminUsers();
+    }
+}
+
 window.addEventListener("DOMContentLoaded", () => {
-    const saved = localStorage.getItem("dd_user");
-    if (saved) {
-        currentUser = JSON.parse(saved);
+    const savedUser = localStorage.getItem("dd_user");
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
         document.getElementById("login-screen").style.display = "none";
         setupNavigationByRole(true);
+
+        // Đổ ngay dữ liệu cũ từ cache ra màn hình để không phải nhìn trang trống
+        const cachedDash = localStorage.getItem("dd_dashboard_cache");
+        if (cachedDash) {
+            try {
+                const parsed = JSON.parse(cachedDash);
+                if (parsed && parsed.currentUser && parsed.currentUser.id === currentUser.id) {
+                    renderAllViewsFromDashboard(parsed);
+                }
+            } catch (e) { }
+        }
+
+        // Âm thầm đồng bộ dữ liệu mới nhất ở chế độ nền
         refreshDashboard(false);
     }
 });
 
 async function handleLogin() {
-    const username = document.getElementById("login-username").value.trim();
-    const password = document.getElementById("login-password").value.trim();
-    if (!username || !password) return showToast("Vui lòng nhập đủ thông tin!", "error");
+    if (isLoggingIn) return;
 
-    showToast("Đang đăng nhập...", "loading", 0);
+    const usernameInput = document.getElementById("login-username");
+    const passwordInput = document.getElementById("login-password");
+    const loginBtn = document.getElementById("btn-login-submit");
+
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!username || !password) {
+        showToast("Vui lòng nhập đủ thông tin!", "error");
+        (!username ? usernameInput : passwordInput).focus();
+        return;
+    }
+
+    // Khóa chặt form & nút bấm chống spam
+    isLoggingIn = true;
+    usernameInput.disabled = true;
+    passwordInput.disabled = true;
+    loginBtn.disabled = true;
+    loginBtn.innerHTML = `<span class="spinner-sm"></span> Đang đăng nhập...`;
+
     try {
         const res = await callApi({ action: "login", username, password });
-        if (!res.success) return showToast(res.message, "error");
+        if (!res.success) {
+            showToast(res.message, "error");
+            return;
+        }
 
-        currentUser = res.user;
-        localStorage.setItem("dd_user", JSON.stringify(currentUser));
+        // Nhận trọn gói user + toàn bộ dữ liệu dashboard ngay trong 1 lần gọi
+        currentUser = res.currentUser || res.user;
         document.getElementById("login-screen").style.display = "none";
-        showToast("Đăng nhập thành công!", "success");
         setupNavigationByRole(true);
-        refreshDashboard(false);
+        renderAllViewsFromDashboard(res);
+        showToast("Đăng nhập thành công!", "success", 1800);
     } catch (e) {
         showToast("Lỗi kết nối máy chủ!", "error");
+    } finally {
+        isLoggingIn = false;
+        usernameInput.disabled = false;
+        passwordInput.disabled = false;
+        loginBtn.disabled = false;
+        loginBtn.innerHTML = "Đăng nhập";
     }
 }
 
 function logout() {
     localStorage.removeItem("dd_user");
+    localStorage.removeItem("dd_dashboard_cache");
     stopCamera();
     location.reload();
 }
 
-function setupNavigationByRole(openDefaultTab = false) {
-    const role = currentUser.role;
-
-    document.querySelectorAll(".role-non-admin").forEach(el => {
-        el.style.display = (role !== "admin") ? "flex" : "none";
-    });
-    document.querySelectorAll(".role-manager").forEach(el => {
-        el.style.display = (role === "manager" || role === "admin") ? "flex" : "none";
-    });
-    document.querySelectorAll(".role-admin").forEach(el => {
-        el.style.display = (role === "admin") ? "flex" : "none";
-    });
-
-    if (openDefaultTab) {
-        if (role === "admin") {
-            const btn = document.querySelector('.nav-item[data-tab="view-attendance"]');
-            switchMainTab("view-attendance", "Điểm Danh", btn);
-        } else {
-            const btn = document.querySelector('.nav-item[data-tab="view-qr"]');
-            switchMainTab("view-qr", "Thẻ Điểm Danh", btn);
-        }
-    }
-}
-
-function backToProfileTab() {
-    const profileBtn = document.querySelector('.nav-item[data-tab="view-profile"]');
-    switchMainTab("view-profile", "Thông Tin Cá Nhân", profileBtn);
-}
-
-function switchMainTab(tabId, title, btn) {
-    document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
-    document.querySelectorAll(".nav-item").forEach(n => n.classList.remove("active"));
-    document.getElementById(tabId).classList.add("active");
-    if (btn) btn.classList.add("active");
-    document.getElementById("header-title").textContent = title;
-
-    if (tabId === "view-profile") {
-        toggleProfileEdit(false);
-    }
-
-    if (tabId === "view-attendance" && attendSubMode === "qr") {
-        startCamera();
-    } else {
-        stopCamera();
-    }
-}
-
 async function refreshDashboard(manual = false) {
+    if (!currentUser || isRefreshingDashboard) return;
+    isRefreshingDashboard = true;
+
     if (manual) showToast("Đang đồng bộ dữ liệu...", "loading", 0);
     try {
         const res = await callApi({ action: "getDashboard", requesterId: currentUser.id });
@@ -134,36 +160,79 @@ async function refreshDashboard(manual = false) {
             if (manual) showToast(res.message, "error");
             return;
         }
-        dashboardData = res;
-        currentUser = res.currentUser;
-        localStorage.setItem("dd_user", JSON.stringify(currentUser));
-        setupNavigationByRole(false);
-
-        document.getElementById("header-date").textContent = "Hôm nay: " + res.today;
-
-        if (currentUser.role !== "admin") {
-            renderQRPage();
-            renderMyHistory();
-        }
-        renderProfilePage();
-
-        if (currentUser.role === "manager" || currentUser.role === "admin") {
-            renderAttendanceList();
-            renderAllStats();
-        }
-        if (currentUser.role === "admin") {
-            renderAdminUsers();
-        }
+        renderAllViewsFromDashboard(res);
         if (manual) showToast("Đã cập nhật dữ liệu mới nhất!", "success", 1500);
     } catch (e) {
         if (manual) showToast("Lỗi tải dữ liệu!", "error");
+    } finally {
+        isRefreshingDashboard = false;
     }
+}
+
+/* ================= ĐIỀU HƯỚNG TAB THEO PHÂN QUYỀN ================= */
+function setupNavigationByRole(isInitialLoad = false) {
+    if (!currentUser) return;
+    const role = currentUser.role || "user";
+
+    document.querySelectorAll(".role-non-admin").forEach(el => {
+        el.style.display = (role !== "admin") ? "" : "none";
+    });
+    document.querySelectorAll(".role-manager").forEach(el => {
+        el.style.display = (role === "manager" || role === "admin") ? "" : "none";
+    });
+    document.querySelectorAll(".role-admin").forEach(el => {
+        el.style.display = (role === "admin") ? "" : "none";
+    });
+
+    if (isInitialLoad) {
+        if (role === "admin") {
+            const adminBtn = document.querySelector('.nav-item[data-tab="view-admin"]');
+            switchMainTab("view-admin", "Quản Trị Thành Viên", adminBtn);
+        } else {
+            const qrBtn = document.querySelector('.nav-item[data-tab="view-qr"]');
+            switchMainTab("view-qr", "Thẻ Điểm Danh", qrBtn);
+        }
+    }
+}
+
+function switchMainTab(tabId, titleText, btnEl) {
+    document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
+    const targetView = document.getElementById(tabId);
+    if (targetView) targetView.classList.add("active");
+
+    if (titleText) {
+        document.getElementById("header-title").textContent = titleText;
+    }
+
+    if (btnEl) {
+        document.querySelectorAll(".bottom-nav .nav-item").forEach(b => b.classList.remove("active"));
+        btnEl.classList.add("active");
+    }
+
+    if (tabId === "view-attendance" && attendSubMode === "qr") {
+        startCamera();
+    } else {
+        stopCamera();
+    }
+
+    const container = document.querySelector(".main-container");
+    if (container) container.scrollTop = 0;
+}
+
+function backToProfileTab() {
+    const profBtn = document.querySelector('.nav-item[data-tab="view-profile"]');
+    switchMainTab("view-profile", "Thông Tin Cá Nhân", profBtn);
 }
 
 /* ================= TRANG 1: MÃ QR ĐIỂM DANH (USER & MANAGER) ================= */
 function renderAvatarHTML(url, name) {
-    if (url && url.trim() !== "") {
-        return `<img src="${url}" alt="avatar" onerror="this.style.display='none'; this.parentNode.textContent='${getInitials(name)}'">`;
+    let cleanUrl = String(url || "").trim();
+    if (cleanUrl !== "") {
+        const driveMatch = cleanUrl.match(/lh3\.googleusercontent\.com\/d\/([a-zA-Z0-9_-]+)/);
+        if (driveMatch && driveMatch[1]) {
+            cleanUrl = `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w200`;
+        }
+        return `<img src="${cleanUrl}" alt="avatar" referrerpolicy="no-referrer" onerror="this.style.display='none'; this.parentNode.textContent='${getInitials(name)}'">`;
     }
     return getInitials(name);
 }
@@ -200,7 +269,7 @@ function formatDayViFull(shortDay) {
         "T5": "Thứ Năm",
         "T6": "Thứ Sáu",
         "T7": "Thứ Bảy",
-        "CN": "Chủ Nhật"
+        "CN": "Chúa Nhật"
     };
     return map[shortDay] || shortDay || "";
 }
@@ -443,9 +512,9 @@ function closeCropModal() {
 function confirmCropAvatar() {
     if (!cropState.img) return;
 
-    // Xuất ảnh đã cắt ở độ phân giải 300x300 sắc nét (~25KB)
+    // Xuất ảnh đã cắt ở độ phân giải 200x200 sắc nét (~25KB)
     const outCanvas = document.createElement("canvas");
-    const outSize = 300;
+    const outSize = 200;
     outCanvas.width = outSize;
     outCanvas.height = outSize;
     const outCtx = outCanvas.getContext("2d");
